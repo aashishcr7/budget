@@ -1,0 +1,14 @@
+from fastapi import APIRouter, Depends
+from utils.dependency import get_current_user
+from db import users_collection
+
+router = APIRouter()
+
+@router.get("/profile")
+def get_profile(user=Depends(get_current_user)):
+    user_data = users_collection.find_one(
+        {"email": user["sub"]},
+        {"_id": 0, "password": 0}
+    )
+    
+    return user_data;

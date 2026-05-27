@@ -3,7 +3,9 @@ import { useState } from "react";
 import API from "@/services/api";
 
 export default function ChatBot() {
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<{ role: string; text: string }[]>(
+    [],
+  );
   const [input, setInput] = useState("");
 
   const sendMessage = async () => {

@@ -8,7 +8,7 @@ from routes.chat import router as chat_router
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://trip-planner-alpha-six.vercel.app/"],  # frontend URL
+    allow_origins=["https://trip-planner-alpha-six.vercel.app"],  # frontend URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

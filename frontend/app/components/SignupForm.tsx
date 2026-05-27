@@ -57,7 +57,7 @@ export default function SignupForm() {
 
     setIsLoading(true);
     try {
-      const response = await axios.post("http://localhost:8000/signup", {
+      const response = await axios.post("https://budget-jd2w.onrender.com/signup", {
         email,
         password,
         fname: firstName,

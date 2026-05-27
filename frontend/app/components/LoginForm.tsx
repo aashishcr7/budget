@@ -38,13 +38,15 @@ export default function LoginForm() {
 
     setIsLoading(true);
     try {
-      const res = await axios.post("http://localhost:8000/login", {
+      const res = await axios.post("https://budget-jd2w.onrender.com/login", {
         email,
         password: pass,
       });
 
       localStorage.setItem("token", res.data.access_token);
       localStorage.setItem("user", JSON.stringify(res.data.user)); // ⬅️ Store user data
+      // document.cookie = `token=${res.data.access_token}; path=/; max-age=86400`;
+
       toast.success("Login successful");
       router.push("/dashboard");
     } catch (error) {

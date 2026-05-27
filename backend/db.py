@@ -7,7 +7,7 @@ load_dotenv()
 client = MongoClient(
     os.getenv("MONGO_URI"),
     tls=True,
-    tlsAllowInvalidCertificates=False
+    tlsAllowInvalidCertificates=True,
 )
 db = client["budget_planner"]
 users_collection = db["users"]

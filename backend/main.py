@@ -4,7 +4,6 @@ from routes.trip import router as trip_router
 from routes.profile import router as profile_router
 from fastapi.middleware.cors import CORSMiddleware
 from routes.chat import router as chat_router
-from routes.crypto_chat import router as crypto_chat_router
 
 app = FastAPI()
 app.add_middleware(

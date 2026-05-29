@@ -21,10 +21,10 @@ export default function ClientLayout({ children }: any) {
 
       {/* 🔥 MAIN LAYOUT CONTROL */}
       <main
-        className={`flex-1 px-6 py-6 ${
-          pathname === "/dashboard"
+        className={`flex-1 ${
+          pathname === "/login" || pathname === "/signup"
             ? "" // dashboard normal layout
-            : "flex justify-center items-center"
+            : ""
         }`}
       >
         {children}

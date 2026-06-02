@@ -3,6 +3,15 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import API from "../../services/api";
 import Model from "./Model";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+import { Input } from "@/components/ui/input";
 
 export default function DashBoard() {
   const router = useRouter();
@@ -141,30 +150,54 @@ export default function DashBoard() {
 
   return (
     <div className="p-6 bg-gray-100">
-      <div className="p-4 flex gap-4">
-        <input
-          type="text"
-          placeholder="Enter the text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="border p-2 rounded w-full mb-4"
-        />
+      <div className="flex flex-row justify-between">
+        <div>
+          <p className="text-2xl font-semibold">Recent Searches</p>
+          <p className="text-sm text-gray-600">
+            Continue exploring your dream search
+          </p>
+        </div>
+        <div className="p-2 flex items-center gap-4 flex-wrap sm:flex-nowrap">
+          <Input
+            placeholder="Search trips..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="h-12 flex-1 min-w-[220px] rounded-2xl border border-slate-200 shadow-sm px-4 text-sm placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-blue-100 focus-visible:border-blue-400"
+          />
 
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value)}
-          className="border p-2 rounded mb-4"
-        >
-          <option value="latest">Latest</option>
-          <option value="budgetLow">Budget Low → High</option>
-          <option value="budgetHigh">Budget High → Low</option>
-        </select>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-sm font-medium text-slate-600">Sort by:</span>
+
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="h-12 w-44 rounded-2xl border border-slate-200 shadow-sm px-4">
+                <SelectValue placeholder="Latest" />
+              </SelectTrigger>
+
+              <SelectContent>
+                <SelectItem value="latest">Latest</SelectItem>
+                <SelectItem value="budgetLow">Budget: Low to High</SelectItem>
+                <SelectItem value="budgetHigh">Budget: High to Low</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       </div>
+
       <button
         onClick={() => setFav(!fav)}
-        className="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded-lg mb-2 shadow cursor-pointer"
+        className={`group relative overflow-hidden px-6 py-3 my-4 rounded-2xl font-semibold text-white transition-all duration-300 cursor-pointer shadow-lg hover:shadow-2xl hover:-translate-y-1 ${
+          fav
+            ? "bg-gradient-to-r from-blue-200 to-indigo-800"
+            : "bg-gradient-to-r from-blue-500 to-indigo-600"
+        }`}
       >
-        {fav ? "Show All" : "Show Favorites"}
+        {/* Glow Effect */}
+        <span className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+
+        {/* Button Text */}
+        <span className="relative flex items-center gap-2">
+          {fav ? <>❤️ Show All Trips</> : <>✨ Show Favorites</>}
+        </span>
       </button>
       {filteredTrips.length === 0 ? (
         // 🟡 EMPTY STATE
@@ -197,59 +230,67 @@ export default function DashBoard() {
             // }
 
             return (
-              <div key={index} className="bg-white rounded-xl shadow-md p-4">
-                <img
-                  src={images[trip.location] || "/fallback.jpg"}
-                  className="w-full h-40 object-cover"
-                />
-                <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-bold">{trip.location}</h2>
+              <div
+                key={index}
+                className="bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 min-h-[500px] flex flex-col"
+              >
+                {/* Image Section */}
+                <div className="relative overflow-hidden">
+                  <img
+                    src={images[trip.location] || "/fallback.jpg"}
+                    className="w-full h-64 object-cover transition-transform duration-500 hover:scale-110"
+                  />
 
+                  {/* Favorite Button */}
                   <button
                     onClick={() => toggleFavorite(trip._id)}
-                    className="text-2xl cursor-pointer"
+                    className="absolute top-4 right-4 text-3xl backdrop-blur-md bg-white/30 rounded-full w-12 h-12 flex items-center justify-center hover:scale-110 transition"
                   >
                     {trip.is_favourite ? "❤️" : "🤍"}
                   </button>
                 </div>
-                <p>Days: {trip.days}</p>
-                <p>Budget: ₹{trip.budget}</p>
 
-                {/* Itinerary */}
-                {/* {parsedItinerary?.trip?.map((day) => (
-                  <div key={day.day} className="mt-3 p-4 bg-blue-50 rounded">
-                    <h3 className="font-bold">
-                      Day {day.day} - {day.title}
-                    </h3>
+                {/* Content */}
+                <div className="flex flex-col justify-between flex-1 p-6">
+                  <div>
+                    {/* Location Name */}
+                    <h2 className="text-3xl font-bold text-gray-800 mb-4">
+                      {trip.location}
+                    </h2>
 
-                    <ul className="list-disc ml-5 mt-2">
-                      {day.activities.map((act, i) => (
-                        <li key={i}>{act}</li>
-                      ))}
-                    </ul>
+                    {/* Info Pills */}
+                    <div className="flex gap-4 mb-5 flex-wrap">
+                      <p className="bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm font-semibold">
+                        ⏳ {trip.days} Days
+                      </p>
 
-                    <p className="text-sm mt-2">Budget: ₹{day.budget}</p>
+                      <p className="bg-green-50 text-green-700 px-4 py-2 rounded-full text-sm font-semibold">
+                        💰 ₹{trip.budget}
+                      </p>
+                    </div>
                   </div>
-                ))} */}
-                <div className="flex gap-4">
-                  {/* View Page */}
-                  <button
-                    className="mt-3 bg-red-500 text-white px-4 py-2 rounded cursor-pointer"
-                    onClick={() => router.push(`/trip/${trip._id}`)}
-                  >
-                    View Page
-                  </button>
 
-                  {/* Delete button */}
-                  <button
-                    className="mt-3 bg-red-500 text-white px-4 py-2 rounded cursor-pointer"
-                    onClick={() => {
-                      setSelectedTrip(trip._id);
-                      setShowModel(true);
-                    }}
-                  >
-                    Delete
-                  </button>
+                  {/* Buttons */}
+                  <div className="flex gap-4 mt-8">
+                    {/* View Button */}
+                    <button
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-2xl font-semibold transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer"
+                      onClick={() => router.push(`/trip/${trip._id}`)}
+                    >
+                      View Trip
+                    </button>
+
+                    {/* Delete Button */}
+                    <button
+                      className="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-2xl font-semibold transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer"
+                      onClick={() => {
+                        setSelectedTrip(trip._id);
+                        setShowModel(true);
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </div>
             );

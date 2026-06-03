@@ -122,7 +122,7 @@ export default function TripPage() {
 
         {/* Content */}
         <div className="absolute bottom-4 left-6 text-white">
-          <h1 className="text-3xl font-bold">{trip.location}</h1>
+          <h1 className="text-3xl font-bold">{trip.destination.city}</h1>
           <p className="text-sm opacity-90">
             📅 {trip.days} days • 💰 ₹{trip.budget}
           </p>

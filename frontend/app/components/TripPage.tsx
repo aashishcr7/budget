@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import API from "@/services/api";
 import { motion } from "framer-motion";
+import Image from "next/image";
 
 type Day = {
   day: number;
@@ -28,6 +29,26 @@ export default function TripPage() {
 
   const [trip, setTrip] = useState<Trip | null>(null);
   const [image, setImage] = useState<string | null>(null);
+
+  // ✅ Fetch Image (Wikipedia)
+  const getImage = async (location: string) => {
+    try {
+      const res = await fetch(
+        `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(
+          location,
+        )}`,
+      );
+
+      if (!res.ok) return null;
+
+      const data = await res.json();
+
+      return data.originalimage?.source || data.thumbnail?.source || null;
+    } catch (err) {
+      console.error("Image Fetch Error:", err);
+      return null;
+    }
+  };
 
   // ✅ Fetch Trip
   useEffect(() => {
@@ -61,26 +82,6 @@ export default function TripPage() {
     fetchTrip();
   }, [id]);
 
-  // ✅ Fetch Image (Wikipedia)
-  const getImage = async (location: string) => {
-    try {
-      const res = await fetch(
-        `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(
-          location,
-        )}`,
-      );
-
-      if (!res.ok) return null;
-
-      const data = await res.json();
-
-      return data.originalimage?.source || data.thumbnail?.source || null;
-    } catch (err) {
-      console.error("Image Fetch Error:", err);
-      return null;
-    }
-  };
-
   // ✅ Loading UI
   if (!trip) {
     return (
@@ -102,8 +103,11 @@ export default function TripPage() {
 
       {/* 🖼️ HERO SECTION */}
       <div className="relative h-64 rounded-xl overflow-hidden shadow-lg">
-        <img
+        <Image
           src={image || "/fallback.jpg"}
+          alt={trip.location ? `${trip.location} image` : "Trip image"}
+          width={800}
+          height={400}
           className="w-full h-full object-cover"
         />
 

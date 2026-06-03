@@ -106,6 +106,8 @@ export default function TripPage() {
         <Image
           src={image || "/fallback.jpg"}
           alt={trip.location ? `${trip.location} image` : "Trip image"}
+          width={800}
+          height={400}
           className="w-full h-full object-cover"
         />
 

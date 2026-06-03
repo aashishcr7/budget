@@ -12,30 +12,38 @@ router = APIRouter()
 
 @router.post("/generate-trip")
 def generate_trip(trip: TripCreate, user=Depends(get_current_user)):
-        
-        ai_itinerary = generate_itinerary(
-            trip.location,
-            trip.days,
-            trip.budget
-        )
-   
 
+    ai_itinerary = generate_itinerary(
+        trip.location,
+        trip.days,
+        trip.budget
+    )
 
-        trip_data = {
+    trip_data = {
         "user_email": user["sub"],
-        "location": trip.location,
+
+        "destination": {
+            "city": trip.location,
+            "full_location": trip.full_location,
+            "country": trip.country,
+            "lat": trip.lat,
+            "lon": trip.lon,
+        },
+
         "days": trip.days,
         "budget": trip.budget,
+        "trip_type": trip.trip_type,
+
         "itinerary": ai_itinerary,
-        "is_favourite": False
+        "is_favourite": False,
     }
 
-        result = trips_collection.insert_one(trip_data)
+    result = trips_collection.insert_one(trip_data)
 
-        return {
+    return {
         "message": "Trip created",
         "trip_id": str(result.inserted_id),
-        "itinerary": ai_itinerary
+        "itinerary": ai_itinerary,
     }
 
 @router.get("/my-trips")
@@ -47,14 +55,18 @@ def get_my_trips(user=Depends(get_current_user)):
 
     for trip in trips:
         result.append({
-            "_id": str(trip["_id"]),  # ✅ FIX
-            "location": trip["location"],
+            "_id": str(trip["_id"]),
+
+            "destination": trip.get("destination", {}),
+
             "days": trip["days"],
             "budget": trip["budget"],
+            "trip_type": trip.get("trip_type"),
+
             "itinerary": trip["itinerary"],
             "user_email": trip["user_email"],
-            "is_favourite":trip["is_favourite"]
-                          })
+            "is_favourite": trip["is_favourite"]
+        })
 
     return {
         "trips": result

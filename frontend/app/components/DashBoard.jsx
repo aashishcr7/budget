@@ -40,6 +40,7 @@ export default function DashBoard() {
         });
 
         setTripData(response.data.trips);
+        console.log("Fetched Trips:", response.data.trips);
 
         // 🔥 Fetch images
         const trips = response.data.trips;
@@ -49,8 +50,8 @@ export default function DashBoard() {
         // Use Promise.all to fetch all images at once (much faster than a for loop!)
         await Promise.all(
           trips.map(async (trip) => {
-            const img = await getImage(trip.location);
-            imgMap[trip.location] = img;
+            const img = await getImage(trip.destination.city);
+            imgMap[trip.destination.city] = img;
           }),
         );
 
@@ -134,17 +135,21 @@ export default function DashBoard() {
 
   const filteredTrips = tripData
     .filter((trip) => {
-      const matchesSearch = trip.location
+      // Defensive checks for undefined properties
+      const city = trip?.destination?.city || "";
+      const matchesSearch = city
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
 
-      const matchesFav = fav ? trip.is_favourite : true;
+      const matchesFav = fav ? trip?.is_favourite : true;
 
       return matchesSearch && matchesFav;
     })
     .sort((a, b) => {
-      if (sortBy === "budgetLow") return a.budget - b.budget;
-      if (sortBy === "budgetHigh") return b.budget - a.budget;
+      const budgetA = a?.budget || 0;
+      const budgetB = b?.budget || 0;
+      if (sortBy === "budgetLow") return budgetA - budgetB;
+      if (sortBy === "budgetHigh") return budgetB - budgetA;
       return 0;
     });
 
@@ -221,14 +226,6 @@ export default function DashBoard() {
         // 🟢 SHOW TRIPS
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTrips.map((trip, index) => {
-            // let parsedItinerary;
-
-            // try {
-            //   parsedItinerary = trip.itinerary;
-            // } catch (e) {
-            //   parsedItinerary = { trip: [] };
-            // }
-
             return (
               <div
                 key={index}
@@ -237,7 +234,7 @@ export default function DashBoard() {
                 {/* Image Section */}
                 <div className="relative overflow-hidden">
                   <img
-                    src={images[trip.location] || "/fallback.jpg"}
+                    src={images[trip.destination.city] || "/fallback.jpg"}
                     className="w-full h-64 object-cover transition-transform duration-500 hover:scale-110"
                   />
 
@@ -251,15 +248,15 @@ export default function DashBoard() {
                 </div>
 
                 {/* Content */}
-                <div className="flex flex-col justify-between flex-1 p-6">
+                <div className="flex flex-col justify-between p-6">
                   <div>
                     {/* Location Name */}
                     <h2 className="text-3xl font-bold text-gray-800 mb-4">
-                      {trip.location}
+                      {trip.destination.city}
                     </h2>
 
                     {/* Info Pills */}
-                    <div className="flex gap-4 mb-5 flex-wrap">
+                    <div className="flex gap-4 mb-2 flex-wrap">
                       <p className="bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm font-semibold">
                         ⏳ {trip.days} Days
                       </p>
@@ -271,7 +268,7 @@ export default function DashBoard() {
                   </div>
 
                   {/* Buttons */}
-                  <div className="flex gap-4 mt-8">
+                  <div className="flex gap-4 mt-4">
                     {/* View Button */}
                     <button
                       className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-2xl font-semibold transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer"

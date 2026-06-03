@@ -15,7 +15,9 @@ type Day = {
 
 type Trip = {
   _id: string;
-  location: string;
+  destination: {
+    city: string;
+  };
   days: number;
   budget: number;
   itinerary: { trip: Day[] };
@@ -31,11 +33,11 @@ export default function TripPage() {
   const [image, setImage] = useState<string | null>(null);
 
   // ✅ Fetch Image (Wikipedia)
-  const getImage = async (location: string) => {
+  const getImage = async (city: string) => {
     try {
       const res = await fetch(
         `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(
-          location,
+          city,
         )}`,
       );
 
@@ -71,7 +73,7 @@ export default function TripPage() {
           setImage(res.data.image);
         } else {
           // Otherwise fetch from Wikipedia
-          const img = await getImage(res.data.location);
+          const img = await getImage(res.data.destination.city);
           setImage(img);
         }
       } catch (err) {

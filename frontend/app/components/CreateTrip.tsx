@@ -130,12 +130,15 @@ export default function CreateTrip() {
   };
 
   return (
-    <div
-      className="relative h-screen w-full bg-cover bg-center flex items-center justify-center overflow-hidden"
-      style={{
-        backgroundImage: `url(${createTripImage.src})`,
-      }}
-    >
+    <div className="relative h-screen w-full flex items-center justify-center overflow-hidden">
+      <Image
+        src={createTripImage}
+        alt="Create trip background"
+        fill
+        className="absolute inset-0 object-cover"
+        style={{ zIndex: -1 }}
+        priority
+      />
       {/* Dark Overlay */}
       <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
 

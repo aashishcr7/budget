@@ -15,7 +15,9 @@ type Day = {
 
 type Trip = {
   _id: string;
-  location: string;
+  destination: {
+    city: string;
+  };
   days: number;
   budget: number;
   itinerary: { trip: Day[] };
@@ -31,11 +33,11 @@ export default function TripPage() {
   const [image, setImage] = useState<string | null>(null);
 
   // ✅ Fetch Image (Wikipedia)
-  const getImage = async (location: string) => {
+  const getImage = async (city: string) => {
     try {
       const res = await fetch(
         `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(
-          location,
+          city,
         )}`,
       );
 
@@ -71,7 +73,7 @@ export default function TripPage() {
           setImage(res.data.image);
         } else {
           // Otherwise fetch from Wikipedia
-          const img = await getImage(res.data.location);
+          const img = await getImage(res.data.destination.city);
           setImage(img);
         }
       } catch (err) {
@@ -105,7 +107,11 @@ export default function TripPage() {
       <div className="relative h-64 rounded-xl overflow-hidden shadow-lg">
         <Image
           src={image || "/fallback.jpg"}
-          alt={trip.location ? `${trip.location} image` : "Trip image"}
+          alt={
+            trip.destination.city
+              ? `${trip.destination.city} image`
+              : "Trip image"
+          }
           width={800}
           height={400}
           className="w-full h-full object-cover"
@@ -116,7 +122,7 @@ export default function TripPage() {
 
         {/* Content */}
         <div className="absolute bottom-4 left-6 text-white">
-          <h1 className="text-3xl font-bold">{trip.location}</h1>
+          <h1 className="text-3xl font-bold">{trip.destination.city}</h1>
           <p className="text-sm opacity-90">
             📅 {trip.days} days • 💰 ₹{trip.budget}
           </p>

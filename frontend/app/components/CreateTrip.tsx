@@ -13,14 +13,16 @@ import createTripImage from "../../public/images/createTripImage.jpg";
 import API from "@/services/api";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
+import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
 
 interface GeoapifyFeature {
   properties: {
     formatted: string;
-    city: string;
+    city?: string;
     country: string;
     lat: number;
     lon: number;
+    address_line1?: string;
   };
 }
 
@@ -33,6 +35,10 @@ export default function CreateTrip() {
   const [tripType, setTripType] = useState<string | null>(null);
   const [days, setDays] = useState("");
   const [budget, setBudget] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [selectedPlace, setSelectedPlace] = useState<GeoapifyFeature | null>(
+    null,
+  );
 
   // add this above your return
   const popularCities = [
@@ -88,6 +94,7 @@ export default function CreateTrip() {
           `https://api.geoapify.com/v1/geocode/autocomplete?text=${query}&apiKey=12723bd7cc58477798a0725a848d440b`,
         );
         setSuggestion(response.data.features || []);
+        console.log("Geoapify Suggestions:", response.data.features);
       } catch (error) {
         console.error("Error fetching cities:", error);
       }
@@ -96,8 +103,9 @@ export default function CreateTrip() {
     return () => clearTimeout(delay);
   }, [query]);
 
-  const handleSelect = (city: string) => {
-    setQuery(city);
+  const handleSelect = (place: GeoapifyFeature) => {
+    setSelectedPlace(place);
+    setQuery(place.properties.formatted);
     setSuggestion([]);
   };
 
@@ -106,18 +114,30 @@ export default function CreateTrip() {
   };
 
   const handleSubmit = async () => {
+    setLoading(true);
+
     try {
       const response = await API.post("/generate-trip", {
-        location: query,
+        location:
+          selectedPlace?.properties.city ||
+          selectedPlace?.properties.address_line1 ||
+          query,
+
+        full_location: query,
+
+        lat: selectedPlace?.properties.lat,
+        lon: selectedPlace?.properties.lon,
+
+        country: selectedPlace?.properties.country,
+
         days: Number(days),
         budget: Number(budget),
+        trip_type: tripType,
       });
-
-      console.log(response.data);
-
       toast.success("Trip created successfully ✅");
+      console.log("Generated Trip:", response.data);
 
-      router.push("/dashboard");
+      router.push(`/trip/${response.data.trip_id}`);
     } catch (error) {
       console.error("ERROR:", error);
 
@@ -126,11 +146,13 @@ export default function CreateTrip() {
       } else {
         toast.error("Something went wrong ❌");
       }
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="relative h-screen w-full flex items-center justify-center overflow-hidden">
+    <div className="relative h-screen w-full flex items-center justify-center">
       <Image
         src={createTripImage}
         alt="Create trip background"
@@ -147,7 +169,7 @@ export default function CreateTrip() {
         <div className="flex flex-row justify-around w-full px-10">
           {/* Left - Heading */}
           <div className="relative z-10 max-w-md animate-fadeIn">
-            <h1 className="text-5xl md:text-7xl font-extrabold text-white mb-6 leading-tight">
+            <h1 className="text-5xl md:text-5xl font-extrabold text-white mb-6 leading-tight">
               Plan your next adventure
             </h1>
             <p className="text-lg md:text-2xl text-gray-200 mb-2 leading-relaxed">
@@ -182,7 +204,7 @@ export default function CreateTrip() {
                   {suggestion.map((item, index) => (
                     <div
                       key={index}
-                      onClick={() => handleSelect(item.properties.formatted)}
+                      onClick={() => handleSelect(item)}
                       className="px-4 py-3 hover:bg-blue-100 cursor-pointer transition text-gray-700 text-sm"
                     >
                       {item.properties.formatted}
@@ -202,9 +224,10 @@ export default function CreateTrip() {
                   {popularCities.map((city, index) => (
                     <div
                       key={index}
-                      onClick={() =>
-                        handleSelect(`${city.name}, ${city.country}`)
-                      }
+                      onClick={() => {
+                        setQuery(`${city.name}, ${city.country}`);
+                        setSelectedPlace(null);
+                      }}
                       className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 hover:bg-blue-100 text-gray-700 text-sm rounded-full cursor-pointer transition"
                     >
                       <span>{city.emoji}</span>
@@ -218,9 +241,9 @@ export default function CreateTrip() {
               <button
                 onClick={() => query.trim() && setStep(2)}
                 disabled={!query.trim()}
-                className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-2 rounded-lg font-semibold transition"
+                className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-2 rounded-lg font-semibold transition cursor-pointer"
               >
-                Next step <span className="ml-1">➡️</span>
+                Next step
               </button>
             </div>
           </div>
@@ -247,7 +270,6 @@ export default function CreateTrip() {
               Number of days for your trip?
             </p>
 
-            {/* Calendar */}
             <div className="flex justify-center mb-6">
               <input
                 type="text"
@@ -273,13 +295,13 @@ export default function CreateTrip() {
                 onClick={() => {
                   setStep(1);
                 }}
-                className="border-2 border-gray-300 text-gray-700 hover:border-gray-400 px-6 py-2 rounded-lg font-semibold transition"
+                className="border-2 border-gray-300 text-gray-700 hover:border-gray-400 px-6 py-2 rounded-lg font-semibold transition cursor-pointer"
               >
-                ⬅️ Back
+                Back
               </button>
               <button
                 onClick={handleContinue}
-                className="bg-green-500 hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-8 py-2 rounded-lg font-semibold transition"
+                className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-2 rounded-lg font-semibold transition cursor-pointer"
               >
                 Next step
               </button>
@@ -302,7 +324,12 @@ export default function CreateTrip() {
             <div className="bg-white/10 backdrop-blur-md rounded-xl p-4">
               <p className="text-lg text-gray-100 mb-2">📍 Destination</p>
               <p className="text-xl font-bold text-white mb-4">{query}</p>
-              <p className="text-lg text-gray-100 mb-2">📅 Dates</p>
+              <p className="text-lg text-gray-100 mb-2">
+                <HourglassEmptyIcon /> Days
+              </p>
+              <p className="text-xl font-bold text-white mb-4">{days}</p>
+              <p className="text-lg text-gray-100 mb-2">💰 Budget</p>
+              <p className="text-xl font-bold text-white mb-4">{budget}</p>
             </div>
           </div>
 
@@ -352,16 +379,17 @@ export default function CreateTrip() {
                   setStep(2);
                   setTripType(null);
                 }}
-                className="border-2 border-gray-300 text-gray-700 hover:border-gray-400 px-6 py-2 rounded-lg font-semibold transition"
+                className="border-2 border-gray-300 text-gray-700 hover:border-gray-400 px-6 py-2 rounded-lg font-semibold transition cursor-pointer"
               >
-                ⬅️ Back
+                Back
               </button>
               <button
                 onClick={handleSubmit}
-                disabled={!tripType}
-                className="bg-green-500 hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-8 py-2 rounded-lg font-semibold transition"
+                disabled={!tripType || loading}
+                className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-2 rounded-lg font-semibold transition cursor-pointer flex items-center gap-2"
               >
-                Generate Itinerary
+                {loading && <HourglassEmptyIcon className="animate-spin" />}
+                {loading ? "Generating Trip..." : "Generate Trip"}
               </button>
             </div>
           </div>

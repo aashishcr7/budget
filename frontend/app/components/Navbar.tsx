@@ -55,12 +55,6 @@ export default function Navbar() {
         >
           Create Trip
         </button>
-        <button
-          onClick={() => router.push("/chat")}
-          className="cursor-pointer hover:underline"
-        >
-          AI
-        </button>
 
         {/* Profile button with dropdown */}
         <div className="relative" ref={dropdownRef}>

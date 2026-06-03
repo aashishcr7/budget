@@ -107,7 +107,11 @@ export default function TripPage() {
       <div className="relative h-64 rounded-xl overflow-hidden shadow-lg">
         <Image
           src={image || "/fallback.jpg"}
-          alt={trip.location ? `${trip.location} image` : "Trip image"}
+          alt={
+            trip.destination.city
+              ? `${trip.destination.city} image`
+              : "Trip image"
+          }
           width={800}
           height={400}
           className="w-full h-full object-cover"

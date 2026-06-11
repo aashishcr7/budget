@@ -10,6 +10,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import HikingIcon from "@mui/icons-material/Hiking";
+import SelfImprovementIcon from "@mui/icons-material/SelfImprovement";
+import FestivalIcon from "@mui/icons-material/Festival";
+import FamilyRestroomIcon from "@mui/icons-material/FamilyRestroom";
+import DiamondIcon from "@mui/icons-material/Diamond";
 
 import { Input } from "@/components/ui/input";
 
@@ -22,6 +27,14 @@ export default function DashBoard() {
   const [fav, setFav] = useState(false);
   const [showModel, setShowModel] = useState(false);
   const [selectedTrip, setSelectedTrip] = useState(null);
+
+  const tripTypeIcons = {
+    adventure: HikingIcon,
+    culture: FestivalIcon,
+    relaxation: SelfImprovementIcon,
+    family: FamilyRestroomIcon,
+    luxury: DiamondIcon,
+  };
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -226,6 +239,8 @@ export default function DashBoard() {
         // 🟢 SHOW TRIPS
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTrips.map((trip, index) => {
+            const Icon = tripTypeIcons[trip.trip_type] || null;
+
             return (
               <div
                 key={index}
@@ -241,7 +256,7 @@ export default function DashBoard() {
                   {/* Favorite Button */}
                   <button
                     onClick={() => toggleFavorite(trip._id)}
-                    className="absolute top-4 right-4 text-3xl backdrop-blur-md bg-white/30 rounded-full w-12 h-12 flex items-center justify-center hover:scale-110 transition"
+                    className="absolute top-4 right-4 text-xl backdrop-blur-md bg-white/30 rounded-full w-10 h-10 flex items-center justify-center hover:scale-110 transition"
                   >
                     {trip.is_favourite ? "❤️" : "🤍"}
                   </button>
@@ -249,20 +264,36 @@ export default function DashBoard() {
 
                 {/* Content */}
                 <div className="flex flex-col justify-between p-6">
-                  <div>
-                    {/* Location Name */}
-                    <h2 className="text-3xl font-bold text-gray-800 mb-4">
-                      {trip.destination.city}
-                    </h2>
-
-                    {/* Info Pills */}
-                    <div className="flex gap-4 mb-2 flex-wrap">
-                      <p className="bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm font-semibold">
-                        ⏳ {trip.days} Days
+                  <div className="flex flex-row justify-between">
+                    <div>
+                      {/* Location Name */}
+                      <h2 className="text-2xl font-bold text-blue-800 mb-2">
+                        {trip.destination.city}
+                      </h2>
+                      <p className="font-semibold text-gray-400 mb-2 uppercase">
+                        {trip.destination.full_location
+                          ?.split(",")[1]
+                          ?.trim() || ""}
+                        , {trip.destination.country}
                       </p>
 
-                      <p className="bg-green-50 text-green-700 px-4 py-2 rounded-full text-sm font-semibold">
-                        💰 ₹{trip.budget}
+                      {/* Info Pills */}
+                      <div className="flex gap-4 mb-2 flex-wrap">
+                        <p className="text-gray-600 text-sm font-semibold">
+                          ⏳ {trip.days} Days
+                        </p>
+
+                        <p className="text-gray-600 text-sm font-semibold capitalize">
+                          {Icon && <Icon className="mr-1" size={14} />}
+                          {trip.trip_type}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div>
+                      {/* Budget */}
+                      <p className="text-lg font-semibold text-gray-600">
+                        Est. Budget: ₹ {trip.budget} <br />
                       </p>
                     </div>
                   </div>

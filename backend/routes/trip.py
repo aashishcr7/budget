@@ -16,7 +16,8 @@ def generate_trip(trip: TripCreate, user=Depends(get_current_user)):
     ai_itinerary = generate_itinerary(
         trip.location,
         trip.days,
-        trip.budget
+        trip.budget,
+        trip.trip_type
     )
 
     trip_data = {

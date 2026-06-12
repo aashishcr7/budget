@@ -29,16 +29,17 @@ interface GeoapifyFeature {
 export default function CreateTrip() {
   const router = useRouter();
 
-  const [query, setQuery] = useState<string>("");
+  const [query, setQuery] = useState("");
   const [suggestion, setSuggestion] = useState<GeoapifyFeature[]>([]);
+  const [selectedPlace, setSelectedPlace] = useState<GeoapifyFeature | null>(
+    null,
+  );
+  const [hasSelected, setHasSelected] = useState(false);
   const [step, setStep] = useState<number>(1);
   const [tripType, setTripType] = useState<string | null>(null);
   const [days, setDays] = useState("");
   const [budget, setBudget] = useState("");
   const [loading, setLoading] = useState(false);
-  const [selectedPlace, setSelectedPlace] = useState<GeoapifyFeature | null>(
-    null,
-  );
 
   // add this above your return
   const popularCities = [
@@ -84,29 +85,35 @@ export default function CreateTrip() {
   ];
 
   useEffect(() => {
+    if (hasSelected) return;
+
     if (!query || query.length < 3) {
+      setSuggestion([]);
       return;
     }
 
     const delay = setTimeout(async () => {
       try {
         const response = await axios.get<{ features: GeoapifyFeature[] }>(
-          `https://api.geoapify.com/v1/geocode/autocomplete?text=${query}&apiKey=12723bd7cc58477798a0725a848d440b`,
+          `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(
+            query,
+          )}&apiKey=12723bd7cc58477798a0725a848d440b`,
         );
+
         setSuggestion(response.data.features || []);
-        console.log("Geoapify Suggestions:", response.data.features);
       } catch (error) {
         console.error("Error fetching cities:", error);
       }
     }, 500);
 
     return () => clearTimeout(delay);
-  }, [query]);
+  }, [query, hasSelected]);
 
   const handleSelect = (place: GeoapifyFeature) => {
     setSelectedPlace(place);
     setQuery(place.properties.formatted);
     setSuggestion([]);
+    setHasSelected(true);
   };
 
   const handleContinue = () => {
@@ -135,7 +142,6 @@ export default function CreateTrip() {
         trip_type: tripType,
       });
       toast.success("Trip created successfully ✅");
-      console.log("Generated Trip:", response.data);
 
       router.push(`/trip/${response.data.trip_id}`);
     } catch (error) {
@@ -195,7 +201,11 @@ export default function CreateTrip() {
                 type="text"
                 placeholder="Search city..."
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setHasSelected(false);
+                  setSelectedPlace(null);
+                }}
                 className="w-full border border-gray-300 rounded-xl px-4 py-3 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
 
@@ -226,7 +236,8 @@ export default function CreateTrip() {
                       key={index}
                       onClick={() => {
                         setQuery(`${city.name}, ${city.country}`);
-                        setSelectedPlace(null);
+                        setSuggestion([]);
+                        setHasSelected(true);
                       }}
                       className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 hover:bg-blue-100 text-gray-700 text-sm rounded-full cursor-pointer transition"
                     >
@@ -239,8 +250,12 @@ export default function CreateTrip() {
             )}
             <div className="flex justify-end mt-8">
               <button
-                onClick={() => query.trim() && setStep(2)}
-                disabled={!query.trim()}
+                onClick={() => {
+                  if (selectedPlace || hasSelected) {
+                    setStep(2);
+                  }
+                }}
+                disabled={!selectedPlace && !hasSelected}
                 className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-2 rounded-lg font-semibold transition cursor-pointer"
               >
                 Next step
@@ -255,7 +270,7 @@ export default function CreateTrip() {
         <div className="flex flex-row justify-around w-full px-10">
           {/* Left - Info */}
           <div className="relative z-10 max-w-md animate-fadeIn">
-            <h1 className="text-5xl md:text-7xl font-extrabold text-white mb-6 leading-tight">
+            <h1 className="text-5xl md:text-5xl font-extrabold text-white mb-6 leading-tight">
               When are you going?
             </h1>
             <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 mb-6">
@@ -301,6 +316,7 @@ export default function CreateTrip() {
               </button>
               <button
                 onClick={handleContinue}
+                disabled={!days || !budget}
                 className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-2 rounded-lg font-semibold transition cursor-pointer"
               >
                 Next step
@@ -315,7 +331,7 @@ export default function CreateTrip() {
         <div className="flex flex-row justify-around w-full px-10">
           {/* Left - Info */}
           <div className="relative z-10 max-w-md animate-fadeIn">
-            <h1 className="text-5xl md:text-7xl font-extrabold text-white mb-6 leading-tight">
+            <h1 className="text-5xl md:text-5xl font-extrabold text-white mb-6 leading-tight">
               What kind of trip is this?
             </h1>
             <p className="text-lg md:text-xl text-gray-200 mb-8 leading-relaxed">

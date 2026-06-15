@@ -81,6 +81,16 @@ export default function Navbar() {
               <button
                 className="block w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer text-left"
                 onClick={() => {
+                  router.push("/mytrips");
+                  setIsopen(false);
+                }}
+              >
+                My Trips
+              </button>
+              <div className="border-t border-gray-200" />
+              <button
+                className="block w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer text-left"
+                onClick={() => {
                   handleLogout();
                   setIsopen(false);
                 }}

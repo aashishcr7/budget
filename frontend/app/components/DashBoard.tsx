@@ -8,6 +8,7 @@ import newyork from "../../public/images/newyork.webp";
 import sydney from "../../public/images/sydneys.webp";
 import rome from "../../public/images/rome.webp";
 import jaipur from "../../public/images/jaipur.webp";
+import heroImage from "../../public/images/hero.webp";
 
 interface Destination {
   city: string;
@@ -39,20 +40,33 @@ export default function DashBoard() {
 
   return (
     <div className="bg-blue-100">
-      <div className="flex flex-row items-center justify-between rounded-lg shadow-md p-6">
-        <div>
-          <h1 className="text-3xl font-bold mb-4">
-            Welcome, {user?.fname || "User"}
+      <div className="relative w-full h-[400px] rounded-3xl overflow-hidden">
+        {/* Background Image */}
+        <Image
+          src={heroImage}
+          alt="Travel Hero"
+          className="w-full h-full object-cover"
+        />
+
+        {/* Dark Overlay */}
+        <div className="absolute inset-0 bg-black/30" />
+
+        {/* Content */}
+        <div className="absolute inset-0 flex flex-col justify-center px-12 text-white">
+          <h1 className="text-5xl font-bold mb-4">
+            Hello, {user?.fname || "Traveler"} 👋
           </h1>
-          <p>Start planning your next adventure!</p>
-        </div>
-        <div>
+
+          <p className="text-xl mb-6">
+            Where will your next adventure take you?
+          </p>
+
           <button
-            className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-2xl font-semibold transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer justify-content w-full"
+            className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-4 sm:px-6 py-2 rounded-lg font-semibold transition cursor-pointer text-sm sm:text-base w-fit"
             onClick={() => router.push("/create-trip")}
           >
             Plan Trip
-          </button>{" "}
+          </button>
         </div>
       </div>
       <p className="text-xl font-semibold p-6">Popular Destinations</p>
@@ -61,7 +75,7 @@ export default function DashBoard() {
           return (
             <div
               key={index}
-              className="bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 min-h-[400px] flex flex-col text-center"
+              className="bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 min-h-[250px] flex flex-col text-center"
             >
               <div className="relative overflow-hidden rounded-t-xl">
                 <Image
@@ -77,7 +91,7 @@ export default function DashBoard() {
                 />
               </div>
 
-              <div className="flex flex-col justify-between p-6">
+              <div className="flex flex-row justify-between p-6">
                 <div className="flex flex-row justify-between">
                   <div>
                     <h2 className="text-2xl font-bold text-blue-800 mb-2">
@@ -88,8 +102,7 @@ export default function DashBoard() {
                     </p>
                   </div>
                 </div>
-
-                <div className="mt-4 flex justify-center">
+                <div className="flex justify-center">
                   <button
                     onClick={() =>
                       router.push(
@@ -98,7 +111,7 @@ export default function DashBoard() {
                         )}`,
                       )
                     }
-                    className="bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-2xl font-semibold transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer justify-content w-[40%]"
+                    className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-4 sm:px-6 py-2 rounded-lg font-semibold transition cursor-pointer text-sm sm:text-base w-fit"
                   >
                     Plan Trip
                   </button>

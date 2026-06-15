@@ -4,15 +4,15 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import "react-calendar/dist/Calendar.css";
 import Image from "next/image";
-import adventureImg from "../../public/images/adventure.jpg";
-import relaxationImg from "../../public/images/relaxation.jpg";
-import cultureImg from "../../public/images/culture.jpg";
-import familyImg from "../../public/images/family.jpg";
-import luxuryImg from "../../public/images/luxury.jpg";
-import createTripImage from "../../public/images/createTripImage.jpg";
+import adventureImg from "../../public/images/adventure.webp";
+import relaxationImg from "../../public/images/relaxation.webp";
+import cultureImg from "../../public/images/culture.webp";
+import familyImg from "../../public/images/family.webp";
+import luxuryImg from "../../public/images/luxury.webp";
+import createTripImage from "../../public/images/createTripImage.webp";
 import API from "@/services/api";
 import { toast } from "react-toastify";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
 
 interface GeoapifyFeature {
@@ -28,6 +28,7 @@ interface GeoapifyFeature {
 
 export default function CreateTrip() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [query, setQuery] = useState("");
   const [suggestion, setSuggestion] = useState<GeoapifyFeature[]>([]);
@@ -85,6 +86,15 @@ export default function CreateTrip() {
   ];
 
   useEffect(() => {
+    const destination = searchParams.get("destination");
+
+    if (destination) {
+      setQuery(destination);
+      setHasSelected(true);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
     if (hasSelected) return;
 
     if (!query || query.length < 3) {
@@ -122,7 +132,6 @@ export default function CreateTrip() {
 
   const handleSubmit = async () => {
     setLoading(true);
-
     try {
       const response = await API.post("/generate-trip", {
         location:

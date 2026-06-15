@@ -17,23 +17,55 @@ import FamilyRestroomIcon from "@mui/icons-material/FamilyRestroom";
 import DiamondIcon from "@mui/icons-material/Diamond";
 
 import { Input } from "@/components/ui/input";
+import { SvgIconComponent } from "@mui/icons-material";
 
-export default function DashBoard() {
+interface Destination {
+  city: string;
+  full_location?: string;
+  country: string;
+}
+
+interface Trip {
+  _id: string;
+  destination: Destination;
+  days: number;
+  trip_type: string;
+  budget: number;
+  is_favourite: boolean;
+}
+
+type SortOption = "latest" | "budgetLow" | "budgetHigh";
+
+export default function MyTrips() {
   const router = useRouter();
-  const [tripData, setTripData] = useState([]); // ✅ fix
-  const [images, setImages] = useState({});
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("latest");
-  const [fav, setFav] = useState(false);
-  const [showModel, setShowModel] = useState(false);
-  const [selectedTrip, setSelectedTrip] = useState(null);
+  const [tripData, setTripData] = useState<Trip[]>([]);
+  const [images, setImages] = useState<Record<string, string | null>>({});
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [sortBy, setSortBy] = useState<SortOption>("latest");
+  const [fav, setFav] = useState<boolean>(false);
+  const [showModel, setShowModel] = useState<boolean>(false);
+  const [selectedTrip, setSelectedTrip] = useState<string | null>(null);
 
-  const tripTypeIcons = {
+  const tripTypeIcons: Record<string, SvgIconComponent> = {
     adventure: HikingIcon,
     culture: FestivalIcon,
     relaxation: SelfImprovementIcon,
     family: FamilyRestroomIcon,
     luxury: DiamondIcon,
+  };
+
+  const getImage = async (location: string): Promise<string | null> => {
+    try {
+      const res = await fetch(
+        `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(location)}`,
+      );
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data.originalimage?.source || data.thumbnail?.source || null;
+    } catch (err) {
+      console.error("Image Fetch Error:", err);
+      return null;
+    }
   };
 
   useEffect(() => {
@@ -48,19 +80,17 @@ export default function DashBoard() {
       try {
         const response = await API.get("/my-trips", {
           headers: {
-            Authorization: `Bearer ${token}`, // ✅ send token
+            Authorization: `Bearer ${token}`,
           },
         });
 
         setTripData(response.data.trips);
         console.log("Fetched Trips:", response.data.trips);
 
-        // 🔥 Fetch images
-        const trips = response.data.trips;
+        const trips: Trip[] = response.data.trips;
         setTripData(trips);
 
-        const imgMap = {};
-        // Use Promise.all to fetch all images at once (much faster than a for loop!)
+        const imgMap: Record<string, string | null> = {};
         await Promise.all(
           trips.map(async (trip) => {
             const img = await getImage(trip.destination.city);
@@ -69,11 +99,20 @@ export default function DashBoard() {
         );
 
         setImages({ ...imgMap });
-      } catch (error) {
+      } catch (error: unknown) {
         console.error("ERROR:", error);
 
-        if (error.response) {
-          alert(error.response.data.detail);
+        if (
+          error &&
+          typeof error === "object" &&
+          "response" in error &&
+          error.response &&
+          typeof error.response === "object" &&
+          "data" in error.response
+        ) {
+          const responseData = (error.response as { data: { detail: string } })
+            .data;
+          alert(responseData.detail);
         } else {
           alert("Something went wrong ❌");
         }
@@ -83,23 +122,7 @@ export default function DashBoard() {
     fetchTrips();
   }, []);
 
-  const getImage = async (location) => {
-    try {
-      const res = await fetch(
-        `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(location)}`,
-      );
-      if (!res.ok) return null; // Handle 404s
-      const data = await res.json();
-
-      // Wikipedia returns 'originalimage' or 'thumbnail'
-      return data.originalimage?.source || data.thumbnail?.source || null;
-    } catch (err) {
-      console.error("Image Fetch Error:", err);
-      return null;
-    }
-  };
-
-  const toggleFavorite = async (id) => {
+  const toggleFavorite = async (id: string): Promise<void> => {
     try {
       const token = localStorage.getItem("token");
 
@@ -113,7 +136,6 @@ export default function DashBoard() {
         },
       );
 
-      // 🔥 Update UI instantly
       setTripData((prev) =>
         prev.map((trip) =>
           trip._id === id
@@ -127,7 +149,7 @@ export default function DashBoard() {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: string): Promise<void> => {
     try {
       const token = localStorage.getItem("token");
 
@@ -137,7 +159,6 @@ export default function DashBoard() {
         },
       });
 
-      // 🔥 Remove from UI
       setTripData((prev) => prev.filter((trip) => trip._id !== id));
       setShowModel(false);
     } catch (error) {
@@ -148,7 +169,6 @@ export default function DashBoard() {
 
   const filteredTrips = tripData
     .filter((trip) => {
-      // Defensive checks for undefined properties
       const city = trip?.destination?.city || "";
       const matchesSearch = city
         .toLowerCase()
@@ -186,7 +206,10 @@ export default function DashBoard() {
           <div className="flex items-center gap-2 shrink-0">
             <span className="text-sm font-medium text-slate-600">Sort by:</span>
 
-            <Select value={sortBy} onValueChange={setSortBy}>
+            <Select
+              value={sortBy}
+              onValueChange={(val) => setSortBy(val as SortOption)}
+            >
               <SelectTrigger className="h-12 w-44 rounded-2xl border border-slate-200 shadow-sm px-4">
                 <SelectValue placeholder="Latest" />
               </SelectTrigger>
@@ -209,16 +232,13 @@ export default function DashBoard() {
             : "bg-gradient-to-r from-blue-500 to-indigo-600"
         }`}
       >
-        {/* Glow Effect */}
         <span className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
 
-        {/* Button Text */}
         <span className="relative flex items-center gap-2">
           {fav ? <>❤️ Show All Trips</> : <>✨ Show Favorites</>}
         </span>
       </button>
       {filteredTrips.length === 0 ? (
-        // 🟡 EMPTY STATE
         <div className="flex flex-col items-center justify-center mt-20">
           <h2 className="text-2xl font-semibold text-gray-600">
             No trips yet 😔
@@ -236,24 +256,22 @@ export default function DashBoard() {
           </button>
         </div>
       ) : (
-        // 🟢 SHOW TRIPS
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTrips.map((trip, index) => {
-            const Icon = tripTypeIcons[trip.trip_type] || null;
+            const Icon: SvgIconComponent | null =
+              tripTypeIcons[trip.trip_type] || null;
 
             return (
               <div
                 key={index}
                 className="bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 min-h-[500px] flex flex-col"
               >
-                {/* Image Section */}
                 <div className="relative overflow-hidden">
                   <img
                     src={images[trip.destination.city] || "/fallback.jpg"}
                     className="w-full h-64 object-cover transition-transform duration-500 hover:scale-110"
                   />
 
-                  {/* Favorite Button */}
                   <button
                     onClick={() => toggleFavorite(trip._id)}
                     className="absolute top-4 right-4 text-xl backdrop-blur-md bg-white/30 rounded-full w-10 h-10 flex items-center justify-center hover:scale-110 transition"
@@ -262,11 +280,9 @@ export default function DashBoard() {
                   </button>
                 </div>
 
-                {/* Content */}
                 <div className="flex flex-col justify-between p-6">
                   <div className="flex flex-row justify-between">
                     <div>
-                      {/* Location Name */}
                       <h2 className="text-2xl font-bold text-blue-800 mb-2">
                         {trip.destination.city}
                       </h2>
@@ -277,30 +293,26 @@ export default function DashBoard() {
                         , {trip.destination.country}
                       </p>
 
-                      {/* Info Pills */}
                       <div className="flex gap-4 mb-2 flex-wrap">
                         <p className="text-gray-600 text-sm font-semibold">
                           ⏳ {trip.days} Days
                         </p>
 
                         <p className="text-gray-600 text-sm font-semibold capitalize">
-                          {Icon && <Icon className="mr-1" size={14} />}
+                          {Icon && <Icon className="mr-1" fontSize="small" />}
                           {trip.trip_type}
                         </p>
                       </div>
                     </div>
 
                     <div>
-                      {/* Budget */}
                       <p className="text-lg font-semibold text-gray-600">
                         Est. Budget: ₹ {trip.budget} <br />
                       </p>
                     </div>
                   </div>
 
-                  {/* Buttons */}
                   <div className="flex gap-4 mt-4">
-                    {/* View Button */}
                     <button
                       className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-2xl font-semibold transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer"
                       onClick={() => router.push(`/trip/${trip._id}`)}
@@ -308,7 +320,6 @@ export default function DashBoard() {
                       View Trip
                     </button>
 
-                    {/* Delete Button */}
                     <button
                       className="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-2xl font-semibold transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer"
                       onClick={() => {
@@ -325,7 +336,7 @@ export default function DashBoard() {
           })}
         </div>
       )}
-      {showModel ? (
+      {showModel && selectedTrip ? (
         <Model
           onConfirm={() => handleDelete(selectedTrip)}
           onCancel={() => setShowModel(false)}

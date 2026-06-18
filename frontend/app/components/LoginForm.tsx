@@ -39,7 +39,7 @@ export default function LoginForm() {
 
     setIsLoading(true);
     try {
-      const res = await axios.post("http://budget-jd2w.onrender.com/login", {
+      const res = await axios.post("https://budget-jd2w.onrender.com/login", {
         email,
         password: pass,
       });

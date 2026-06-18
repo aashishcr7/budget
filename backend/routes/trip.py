@@ -7,45 +7,52 @@ from services.llm_service import (
     generate_itinerary,
 )
 from bson import ObjectId
+from utils.cache import r
 
 router = APIRouter()
 
 @router.post("/generate-trip")
 def generate_trip(trip: TripCreate, user=Depends(get_current_user)):
+    try:
 
-    ai_itinerary = generate_itinerary(
-        trip.location,
-        trip.days,
-        trip.budget,
-        trip.trip_type
-    )
+        ai_itinerary = generate_itinerary(
+            trip.location,
+            trip.days,
+            trip.budget,
+            trip.trip_type
+        )
 
-    trip_data = {
-        "user_email": user["sub"],
+        trip_data = {
+            "user_email": user["sub"],
 
-        "destination": {
-            "city": trip.location,
-            "full_location": trip.full_location,
-            "country": trip.country,
-            "lat": trip.lat,
-            "lon": trip.lon,
-        },
+            "destination": {
+                "city": trip.location,
+                "full_location": trip.full_location,
+                "country": trip.country,
+                "lat": trip.lat,
+                "lon": trip.lon,
+            },
 
-        "days": trip.days,
-        "budget": trip.budget,
-        "trip_type": trip.trip_type,
+            "days": trip.days,
+            "budget": trip.budget,
+            "trip_type": trip.trip_type,
 
-        "itinerary": ai_itinerary,
-        "is_favourite": False,
-    }
+            "itinerary": ai_itinerary,
+            "is_favourite": False,
+        }
 
-    result = trips_collection.insert_one(trip_data)
+        result = trips_collection.insert_one(trip_data)
+          # ← Invalidate recommendations cache since user has a new trip
+        r.delete(f"recommendations:{user['sub']}")
+        print(f"Cache invalidated for recommendations:{user['sub']}")
 
-    return {
-        "message": "Trip created",
-        "trip_id": str(result.inserted_id),
-        "itinerary": ai_itinerary,
-    }
+        return {
+            "message": "Trip created",
+            "trip_id": str(result.inserted_id),
+            "itinerary": ai_itinerary,
+        }
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
 
 @router.get("/my-trips")
 def get_my_trips(user=Depends(get_current_user)):
@@ -126,3 +133,31 @@ def favourites_trip(trip_id:str, user=Depends(get_current_user)):
     )
 
     return {"is_favourite": new_value}
+
+@router.get("/recommendations")
+def get_recommendations(user=Depends(get_current_user)):
+    """
+    Get personalized trip recommendations based on user's trip history.
+    Analyzes past trips and suggests new destinations matching their travel style.
+    """
+    try:
+        user_email = user["sub"]
+        
+        # Fetch user's past trips from DB
+        user_trips = list(trips_collection.find({"user_email": user_email}).sort("_id", -1))
+        
+        if not user_trips:
+            return {"recommendations": []}  # ← Skip LLM call entirely, return empty
+        
+        # Has trips → generate personalized recommendations
+        from services.llm_service import generate_recommendations
+        recommendations = generate_recommendations(user_trips, user_email)
+        
+        return {
+            "message": "Personalized recommendations based on your travel history",
+            "past_trips_count": len(user_trips),
+            "recommendations": recommendations.get("recommendations", [])
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating recommendations: {str(e)}")

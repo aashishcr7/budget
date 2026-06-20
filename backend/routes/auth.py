@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 
 router = APIRouter()
 
-IS_PRODUCTION = os.getenv("ENVIORNMENT") == "production"
+IS_PRODUCTION = os.getenv("ENVIRONMENT") == "production"
 SAMESITE = "none" if IS_PRODUCTION else "lax"
 
 @router.post("/signup")

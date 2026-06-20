@@ -39,7 +39,7 @@ export default function LoginForm() {
 
     setIsLoading(true);
     try {
-      const res = await axios.post(
+      await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/login`,
         {
           email,
@@ -96,10 +96,10 @@ export default function LoginForm() {
           </p>
         </div>
         <div className="mb-4 px-2 sm:px-4">
-          <span className="text-xl sm:text-2xl md:text-3xl font-bold text-black-800 block">
+          <span className="text-xl sm:text-2xl md:text-3xl font-bold text-black-800">
             Welcome
           </span>
-          <span className="text-xl sm:text-2xl md:text-3xl font-bold text-purple-800 block">
+          <span className="text-xl sm:text-2xl md:text-3xl ml-3 font-bold text-purple-800">
             Back
           </span>
           <p className="text-xs sm:text-sm text-gray-600 mt-1">

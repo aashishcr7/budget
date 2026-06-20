@@ -2,25 +2,23 @@
 import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import API from "@/services/api";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Navbar() {
   const router = useRouter();
+  const { user, setUser, loading } = useAuth();
   const [isOpen, setIsopen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = async () => {
     try {
-      console.log("Logout: Calling backend API");
-      // Call backend to delete the cookie
       await API.post("/logout");
-      console.log("Logout: Backend cookie deleted");
+      setUser(null); // ← clear user from context immediately
     } finally {
-      // Full page reload to ensure cookie is cleared and auth check fails
       window.location.href = "/login";
     }
   };
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -41,9 +39,9 @@ export default function Navbar() {
   }, [isOpen]);
 
   const getInitials = () => {
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    const fname = user.fname || "";
-    const lname = user.lname || "";
+    console.log("User in Navbar:", user); // Debugging line
+    const fname = user?.fname || "";
+    const lname = user?.lname || "";
     return `${fname.charAt(0)}${lname.charAt(0)}`.toUpperCase();
   };
 
@@ -64,16 +62,18 @@ export default function Navbar() {
           Create Trip
         </button>
 
-        {/* Profile button with dropdown */}
         <div className="relative" ref={dropdownRef}>
           <button
             className="w-12 h-12 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition cursor-pointer flex items-center justify-center text-lg font-semibold"
             onClick={() => setIsopen(!isOpen)}
           >
-            {getInitials()}
+            {loading ? (
+              <div className="w-5 h-5 border-2 text-white border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              getInitials()
+            )}
           </button>
 
-          {/* The dropdown menu */}
           {isOpen && (
             <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-300 rounded-md shadow-lg z-20">
               <button

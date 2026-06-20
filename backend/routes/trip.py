@@ -23,7 +23,7 @@ def generate_trip(trip: TripCreate, user=Depends(get_current_user)):
         )
 
         trip_data = {
-            "user_email": user["sub"],
+            "user_email": user["email"],
 
             "destination": {
                 "city": trip.location,
@@ -43,8 +43,8 @@ def generate_trip(trip: TripCreate, user=Depends(get_current_user)):
 
         result = trips_collection.insert_one(trip_data)
           # ← Invalidate recommendations cache since user has a new trip
-        r.delete(f"recommendations:{user['sub']}")
-        print(f"Cache invalidated for recommendations:{user['sub']}")
+        r.delete(f"recommendations:{user['email']}")
+        print(f"Cache invalidated for recommendations:{user['email']}")
 
         return {
             "message": "Trip created",
@@ -56,7 +56,7 @@ def generate_trip(trip: TripCreate, user=Depends(get_current_user)):
 
 @router.get("/my-trips")
 def get_my_trips(user=Depends(get_current_user)):
-    user_email = user["sub"]
+    user_email = user["email"]
     trips = trips_collection.find({"user_email": user_email})
 
     result = []
@@ -87,7 +87,7 @@ def get_single_trip(trip_id: str, user=Depends(get_current_user)):
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
 
-    if trip["user_email"] != user["sub"]:
+    if trip["user_email"] != user["email"]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     trip["_id"] = str(trip["_id"])
@@ -108,7 +108,7 @@ def delete_trip(trip_id: str, user=Depends(get_current_user)):
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
 
-    if trip["user_email"] != user["sub"]:
+    if trip["user_email"] != user["email"]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     trips_collection.delete_one({"_id": ObjectId(trip_id)})
@@ -122,7 +122,7 @@ def favourites_trip(trip_id:str, user=Depends(get_current_user)):
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
     
-    if trip["user_email"] != user["sub"]:
+    if trip["user_email"] != user["email"]:
         raise HTTPException(status_code=403, detail="Not authorized")
     
     new_value = not trip.get("is_favourite", False)
@@ -141,7 +141,7 @@ def get_recommendations(user=Depends(get_current_user)):
     Analyzes past trips and suggests new destinations matching their travel style.
     """
     try:
-        user_email = user["sub"]
+        user_email = user["email"]
         
         # Fetch user's past trips from DB
         user_trips = list(trips_collection.find({"user_email": user_email}).sort("_id", -1))

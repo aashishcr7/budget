@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image, { StaticImageData } from "next/image";
 import manali from "../../public/images/manali.webp";
@@ -10,6 +10,7 @@ import rome from "../../public/images/rome.webp";
 import jaipur from "../../public/images/jaipur.webp";
 import heroImage from "../../public/images/hero.webp";
 import API from "@/services/api";
+import { useAuth } from "@/context/AuthContext";
 
 interface Destination {
   city: string;
@@ -25,7 +26,6 @@ interface Recommendation {
   estimated_budget: number;
 }
 
-// Skeleton card shown while recommendations are loading
 function RecommendationSkeleton() {
   return (
     <div className="rounded-2xl p-6 shadow-lg bg-gradient-to-br from-purple-200 to-pink-200 animate-pulse">
@@ -44,19 +44,11 @@ function RecommendationSkeleton() {
 
 export default function DashBoard() {
   const router = useRouter();
-
-  const [user] = useState(() => {
-    if (typeof window === "undefined") return null;
-    try {
-      const userData = localStorage.getItem("user");
-      return userData ? JSON.parse(userData) : null;
-    } catch {
-      return null;
-    }
-  });
+  const { user, loading: authLoading } = useAuth(); // ← replaces localStorage
 
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [loadingRecommendations, setLoadingRecommendations] = useState(true);
+  const hasFetched = useRef(false); // ← prevents double fetch in StrictMode
 
   const popularDestinations: Destination[] = [
     { city: "Manali", State: "HP", country: "India", photo: manali },
@@ -68,6 +60,10 @@ export default function DashBoard() {
   ];
 
   useEffect(() => {
+    if (authLoading) return; // ← wait for auth to resolve
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+
     const fetchRecommendations = async () => {
       setLoadingRecommendations(true);
       try {
@@ -82,7 +78,10 @@ export default function DashBoard() {
     };
 
     fetchRecommendations();
-  }, []);
+  }, [authLoading]); // ← re-run when auth resolves
+
+  // ← prevents flash while auth is being checked
+  if (authLoading) return null;
 
   return (
     <div className="min-h-screen">
@@ -97,7 +96,7 @@ export default function DashBoard() {
         <div className="absolute inset-0 bg-black/30" />
         <div className="absolute inset-0 flex flex-col justify-center px-12 text-white">
           <h1 className="text-5xl font-bold mb-4">
-            Hello, {user?.fname || "Traveler"} 👋
+            Hello, {user?.fname || "Traveler"} 👋 {/* ← from context now */}
           </h1>
           <p className="text-xl mb-6">
             Where will your next adventure take you?
@@ -111,57 +110,53 @@ export default function DashBoard() {
         </div>
       </div>
 
-      {/* Recommendations Section — skeleton while loading, hidden if no data */}
-      {
-        loadingRecommendations ? (
-          <div className="p-6">
-            <div className="h-6 bg-gray-300 animate-pulse rounded w-48 mb-6" />
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <RecommendationSkeleton />
-              <RecommendationSkeleton />
-              <RecommendationSkeleton />
-            </div>
+      {/* Recommendations Section */}
+      {loadingRecommendations ? (
+        <div className="p-6">
+          <div className="h-6 bg-gray-300 animate-pulse rounded w-48 mb-6" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <RecommendationSkeleton />
+            <RecommendationSkeleton />
+            <RecommendationSkeleton />
           </div>
-        ) : recommendations.length > 0 ? (
-          <div className="p-6">
-            <p className="text-xl font-semibold mb-6 text-gray-800">
-              🎯 Recommended for You
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {recommendations.map((rec, index) => (
-                <div
-                  key={index}
-                  className="bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl p-6 text-white shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
-                >
-                  <div className="mb-4">
-                    <h3 className="text-2xl font-bold mb-2">
-                      {rec.destination}
-                    </h3>
-                    <span className="text-sm bg-white/20 rounded-full px-3 py-1 capitalize">
-                      {rec.suggested_trip_type}
-                    </span>
-                  </div>
-                  <p className="text-sm mb-6 line-clamp-3 opacity-90">
-                    {rec.reason}
-                  </p>
-                  <div className="flex justify-between items-center">
-                    <button
-                      onClick={() =>
-                        router.push(
-                          `/create-trip?destination=${encodeURIComponent(rec.destination)}`,
-                        )
-                      }
-                      className="bg-white text-purple-600 hover:bg-gray-100 px-4 py-2 rounded-lg font-semibold transition cursor-pointer text-sm"
-                    >
-                      Plan Trip
-                    </button>
-                  </div>
+        </div>
+      ) : recommendations.length > 0 ? (
+        <div className="p-6">
+          <p className="text-xl font-semibold mb-6 text-gray-800">
+            🎯 Recommended for You
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {recommendations.map((rec, index) => (
+              <div
+                key={index}
+                className="bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl p-6 text-white shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
+              >
+                <div className="mb-4">
+                  <h3 className="text-2xl font-bold mb-2">{rec.destination}</h3>
+                  <span className="text-sm bg-white/20 rounded-full px-3 py-1 capitalize">
+                    {rec.suggested_trip_type}
+                  </span>
                 </div>
-              ))}
-            </div>
+                <p className="text-sm mb-6 line-clamp-3 opacity-90">
+                  {rec.reason}
+                </p>
+                <div className="flex justify-between items-center">
+                  <button
+                    onClick={() =>
+                      router.push(
+                        `/create-trip?destination=${encodeURIComponent(rec.destination)}`,
+                      )
+                    }
+                    className="bg-white text-purple-600 hover:bg-gray-100 px-4 py-2 rounded-lg font-semibold transition cursor-pointer text-sm"
+                  >
+                    Plan Trip
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
-        ) : null /* New user — no recommendations section at all */
-      }
+        </div>
+      ) : null}
 
       {/* Popular Destinations Section */}
       <div className="p-6">
@@ -197,9 +192,7 @@ export default function DashBoard() {
                 <button
                   onClick={() =>
                     router.push(
-                      `/create-trip?destination=${encodeURIComponent(
-                        `${destination.city}, ${destination.country}`,
-                      )}`,
+                      `/create-trip?destination=${encodeURIComponent(`${destination.city}, ${destination.country}`)}`,
                     )
                   }
                   className="bg-blue-500 hover:bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg font-semibold transition cursor-pointer text-sm sm:text-base"

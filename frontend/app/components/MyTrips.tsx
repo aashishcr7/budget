@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import API from "../../services/api";
 import Model from "./Model";
@@ -15,9 +15,9 @@ import SelfImprovementIcon from "@mui/icons-material/SelfImprovement";
 import FestivalIcon from "@mui/icons-material/Festival";
 import FamilyRestroomIcon from "@mui/icons-material/FamilyRestroom";
 import DiamondIcon from "@mui/icons-material/Diamond";
-
 import { Input } from "@/components/ui/input";
 import { SvgIconComponent } from "@mui/icons-material";
+import { useAuth } from "@/context/AuthContext"; // ← add this
 
 interface Destination {
   city: string;
@@ -38,6 +38,7 @@ type SortOption = "latest" | "budgetLow" | "budgetHigh";
 
 export default function MyTrips() {
   const router = useRouter();
+  const { loading: authLoading } = useAuth(); // ← add this
   const [tripData, setTripData] = useState<Trip[]>([]);
   const [images, setImages] = useState<Record<string, string | null>>({});
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -45,6 +46,7 @@ export default function MyTrips() {
   const [fav, setFav] = useState<boolean>(false);
   const [showModel, setShowModel] = useState<boolean>(false);
   const [selectedTrip, setSelectedTrip] = useState<string | null>(null);
+  const hasFetched = useRef(false); // ← prevent double fetch
 
   const tripTypeIcons: Record<string, SvgIconComponent> = {
     adventure: HikingIcon,
@@ -69,13 +71,14 @@ export default function MyTrips() {
   };
 
   useEffect(() => {
-    const verifyUser = async () => {
+    if (authLoading) return; // ← wait for auth
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+
+    const fetchTrips = async () => {
       try {
-        await API.get("/me");
-
-        const response = await API.get("/my-trips");
+        const response = await API.get("/my-trips"); // ← removed manual /me call
         const trips: Trip[] = response.data.trips;
-
         setTripData(trips);
 
         const imgMap: Record<string, string | null> = {};
@@ -85,7 +88,6 @@ export default function MyTrips() {
             imgMap[trip.destination.city] = img;
           }),
         );
-
         setImages({ ...imgMap });
       } catch (error) {
         console.error("Error fetching trips:", error);
@@ -93,21 +95,15 @@ export default function MyTrips() {
       }
     };
 
-    verifyUser();
-  }, []);
+    fetchTrips();
+  }, [authLoading]); // ← re-run when auth resolves
+
+  // ← prevents flash while auth is being checked
+  if (authLoading) return null;
 
   const toggleFavorite = async (id: string): Promise<void> => {
     try {
-      const res = await API.put(
-        `/trip/${id}/favourites`,
-        {},
-        // {
-        //   headers: {
-        //     Authorization: `Bearer ${token}`,
-        //   },
-        // },
-      );
-
+      const res = await API.put(`/trip/${id}/favourites`, {});
       setTripData((prev) =>
         prev.map((trip) =>
           trip._id === id
@@ -123,12 +119,7 @@ export default function MyTrips() {
 
   const handleDelete = async (id: string): Promise<void> => {
     try {
-      await API.delete(`/trip/${id}`, {
-        // headers: {
-        //   Authorization: `Bearer ${token}`,
-        // },
-      });
-
+      await API.delete(`/trip/${id}`);
       setTripData((prev) => prev.filter((trip) => trip._id !== id));
       setShowModel(false);
     } catch (error) {
@@ -143,9 +134,7 @@ export default function MyTrips() {
       const matchesSearch = city
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
-
       const matchesFav = fav ? trip?.is_favourite : true;
-
       return matchesSearch && matchesFav;
     })
     .sort((a, b) => {
@@ -172,10 +161,8 @@ export default function MyTrips() {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="h-12 flex-1 min-w-[220px] rounded-2xl border border-slate-200 shadow-sm px-4 text-sm placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-blue-100 focus-visible:border-blue-400"
           />
-
           <div className="flex items-center gap-2 shrink-0">
             <span className="text-sm font-medium text-slate-600">Sort by:</span>
-
             <Select
               value={sortBy}
               onValueChange={(val) => setSortBy(val as SortOption)}
@@ -183,7 +170,6 @@ export default function MyTrips() {
               <SelectTrigger className="h-12 w-44 rounded-2xl border border-slate-200 shadow-sm px-4">
                 <SelectValue placeholder="Latest" />
               </SelectTrigger>
-
               <SelectContent>
                 <SelectItem value="latest">Latest</SelectItem>
                 <SelectItem value="budgetLow">Budget: Low to High</SelectItem>
@@ -202,22 +188,20 @@ export default function MyTrips() {
             : "bg-gradient-to-r from-blue-500 to-indigo-600"
         }`}
       >
-        <span className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-
+        <span className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         <span className="relative flex items-center gap-2">
           {fav ? <>❤️ Show All Trips</> : <>✨ Show Favorites</>}
         </span>
       </button>
+
       {filteredTrips.length === 0 ? (
         <div className="flex flex-col items-center justify-center mt-20">
           <h2 className="text-2xl font-semibold text-gray-600">
             No trips yet 😔
           </h2>
-
           <p className="text-gray-500 mt-2">
             Start planning your next adventure!
           </p>
-
           <button
             onClick={() => router.push("/create-trip")}
             className="mt-6 bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg shadow cursor-pointer"
@@ -230,7 +214,6 @@ export default function MyTrips() {
           {filteredTrips.map((trip, index) => {
             const Icon: SvgIconComponent | null =
               tripTypeIcons[trip.trip_type] || null;
-
             return (
               <div
                 key={index}
@@ -241,7 +224,6 @@ export default function MyTrips() {
                     src={images[trip.destination.city] || "/fallback.jpg"}
                     className="w-full h-64 object-cover transition-transform duration-500 hover:scale-110"
                   />
-
                   <button
                     onClick={() => toggleFavorite(trip._id)}
                     className="absolute top-4 right-4 text-xl backdrop-blur-md bg-white/30 rounded-full w-10 h-10 flex items-center justify-center hover:scale-110 transition"
@@ -249,7 +231,6 @@ export default function MyTrips() {
                     {trip.is_favourite ? "❤️" : "🤍"}
                   </button>
                 </div>
-
                 <div className="flex flex-col justify-between p-6">
                   <div className="flex flex-row justify-between">
                     <div>
@@ -262,26 +243,22 @@ export default function MyTrips() {
                           ?.trim() || ""}
                         , {trip.destination.country}
                       </p>
-
                       <div className="flex gap-4 mb-2 flex-wrap">
                         <p className="text-gray-600 text-sm font-semibold">
                           ⏳ {trip.days} Days
                         </p>
-
                         <p className="text-gray-600 text-sm font-semibold capitalize">
                           {Icon && <Icon className="mr-1" fontSize="small" />}
                           {trip.trip_type}
                         </p>
                       </div>
                     </div>
-
                     <div>
                       <p className="text-lg font-semibold text-gray-600">
-                        Est. Budget: ₹ {trip.budget} <br />
+                        Est. Budget: ₹ {trip.budget}
                       </p>
                     </div>
                   </div>
-
                   <div className="flex gap-4 mt-4">
                     <button
                       className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-2xl font-semibold transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer"
@@ -289,7 +266,6 @@ export default function MyTrips() {
                     >
                       View Trip
                     </button>
-
                     <button
                       className="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-2xl font-semibold transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer"
                       onClick={() => {
@@ -306,12 +282,13 @@ export default function MyTrips() {
           })}
         </div>
       )}
-      {showModel && selectedTrip ? (
+
+      {showModel && selectedTrip && (
         <Model
           onConfirm={() => handleDelete(selectedTrip)}
           onCancel={() => setShowModel(false)}
         />
-      ) : null}
+      )}
     </div>
   );
 }

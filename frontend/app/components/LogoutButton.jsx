@@ -1,14 +1,20 @@
 "use client";
-import { useRouter } from "next/navigation";
+import API from "@/services/api";
 
 export default function LogoutButton() {
-  const router = useRouter();
-
-  const handleLogout = () => {
-    // Remove token
-    localStorage.removeItem("token");
-    // Redirect
-    router.push("/login");
+  const handleLogout = async () => {
+    console.log("LOGOUT BUTTON CLICKED");
+    try {
+      console.log("Calling API.post('/logout')");
+      const response = await API.post("/logout");
+      console.log("Logout response:", response);
+    } catch (err) {
+      console.error("Logout failed:", err);
+    } finally {
+      console.log("Redirecting to login with full page reload");
+      // Force a full page reload to clear all state and re-authenticate
+      window.location.href = "/login";
+    }
   };
 
   return (

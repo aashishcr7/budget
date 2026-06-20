@@ -6,6 +6,7 @@ from routes.trip import router as trip_router
 from routes.profile import router as profile_router
 from fastapi.middleware.cors import CORSMiddleware
 
+
 load_dotenv()
 app = FastAPI()
 app.add_middleware(

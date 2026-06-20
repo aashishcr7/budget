@@ -1,13 +1,27 @@
-from fastapi import Depends, HTTPException
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import Depends, HTTPException, Cookie
 from utils.jwt import verify_token
 
-security = HTTPBearer()
-
-def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+def get_current_user(access_token: str = Cookie(default=None)):
     try:
-        token = credentials.credentials  # Extracts only the token
-        payload = verify_token(token)
+        print(f"GET_CURRENT_USER called - access_token: {access_token}")
+        if not access_token:
+            print("No token found in cookie")
+            raise HTTPException(
+                status_code=401,
+                detail="Not authenticated"
+            )
+
+        payload = verify_token(access_token)
+
+        print("COOKIE TOKEN:", access_token)
+        print("USER PAYLOAD:", payload)
+
         return payload
-    except:
-        raise HTTPException(status_code=401, detail="Invalid token")
+
+    except Exception as e:
+        print("AUTH ERROR:", str(e))
+
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid token"
+        )

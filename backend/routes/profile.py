@@ -12,3 +12,17 @@ def get_profile(user=Depends(get_current_user)):
     )
     
     return user_data;
+
+@router.put("/profile")
+def update_profile(data: dict, user=Depends(get_current_user)):
+    users_collection.update_one(
+        {"email": user["sub"]},
+        {"$set": {
+            "fname": data["fname"],
+            "lname": data["lname"]
+        }}
+    )
+
+    return {
+        "message": "Profile updated successfully"
+    }

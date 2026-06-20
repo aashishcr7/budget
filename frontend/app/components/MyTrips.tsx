@@ -69,25 +69,13 @@ export default function MyTrips() {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      router.push("/login");
-      return;
-    }
-
-    const fetchTrips = async () => {
+    const verifyUser = async () => {
       try {
-        const response = await API.get("/my-trips", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        await API.get("/me");
 
-        setTripData(response.data.trips);
-        console.log("Fetched Trips:", response.data.trips);
-
+        const response = await API.get("/my-trips");
         const trips: Trip[] = response.data.trips;
+
         setTripData(trips);
 
         const imgMap: Record<string, string | null> = {};
@@ -99,41 +87,25 @@ export default function MyTrips() {
         );
 
         setImages({ ...imgMap });
-      } catch (error: unknown) {
-        console.error("ERROR:", error);
-
-        if (
-          error &&
-          typeof error === "object" &&
-          "response" in error &&
-          error.response &&
-          typeof error.response === "object" &&
-          "data" in error.response
-        ) {
-          const responseData = (error.response as { data: { detail: string } })
-            .data;
-          alert(responseData.detail);
-        } else {
-          alert("Something went wrong ❌");
-        }
+      } catch (error) {
+        console.error("Error fetching trips:", error);
+        router.push("/login");
       }
     };
 
-    fetchTrips();
+    verifyUser();
   }, []);
 
   const toggleFavorite = async (id: string): Promise<void> => {
     try {
-      const token = localStorage.getItem("token");
-
       const res = await API.put(
         `/trip/${id}/favourites`,
         {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
+        // {
+        //   headers: {
+        //     Authorization: `Bearer ${token}`,
+        //   },
+        // },
       );
 
       setTripData((prev) =>
@@ -151,12 +123,10 @@ export default function MyTrips() {
 
   const handleDelete = async (id: string): Promise<void> => {
     try {
-      const token = localStorage.getItem("token");
-
       await API.delete(`/trip/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        // headers: {
+        //   Authorization: `Bearer ${token}`,
+        // },
       });
 
       setTripData((prev) => prev.filter((trip) => trip._id !== id));

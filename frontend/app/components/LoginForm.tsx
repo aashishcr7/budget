@@ -39,10 +39,16 @@ export default function LoginForm() {
 
     setIsLoading(true);
     try {
-      const res = await axios.post("https://budget-jd2w.onrender.com/login", {
-        email,
-        password: pass,
-      });
+      const res = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/login`,
+        {
+          email,
+          password: pass,
+        },
+        {
+          withCredentials: true,
+        },
+      );
 
       localStorage.setItem("token", res.data.access_token);
       localStorage.setItem("user", JSON.stringify(res.data.user));

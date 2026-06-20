@@ -1,15 +1,23 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
+import API from "@/services/api";
 
 export default function Navbar() {
   const router = useRouter();
   const [isOpen, setIsopen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    router.push("/login");
+  const handleLogout = async () => {
+    try {
+      console.log("Logout: Calling backend API");
+      // Call backend to delete the cookie
+      await API.post("/logout");
+      console.log("Logout: Backend cookie deleted");
+    } finally {
+      // Full page reload to ensure cookie is cleared and auth check fails
+      window.location.href = "/login";
+    }
   };
 
   // Close dropdown when clicking outside

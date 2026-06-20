@@ -58,12 +58,15 @@ export default function SignupForm() {
 
     setIsLoading(true);
     try {
-      const response = await axios.post("https://budget-jd2w.onrender.com/signup", {
-        email,
-        password,
-        fname: firstName,
-        lname: lastName,
-      });
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/signup`,
+        {
+          email,
+          password,
+          fname: firstName,
+          lname: lastName,
+        },
+      );
 
       console.log(response.data);
       toast.success("Account created successfully!");

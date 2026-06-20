@@ -6,6 +6,9 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get("access_token");
   const pathname = request.nextUrl.pathname;
 
+  console.log("PATH:", request.nextUrl.pathname);
+  console.log("TOKEN:", token?.value);
+
   const isProtected = protectedRoutes.some((route) =>
     pathname.startsWith(route),
   );

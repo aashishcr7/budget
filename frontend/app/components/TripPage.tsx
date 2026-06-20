@@ -58,26 +58,19 @@ export default function TripPage() {
 
     const fetchTrip = async () => {
       try {
-        const token = localStorage.getItem("token");
-
-        const res = await API.get(`/trip/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const res = await API.get(`/trip/${id}`);
 
         setTrip(res.data);
 
-        // If backend image exists → use it
         if (res.data.image) {
           setImage(res.data.image);
         } else {
-          // Otherwise fetch from Wikipedia
           const img = await getImage(res.data.destination.city);
           setImage(img);
         }
       } catch (err) {
         console.error("Fetch Error:", err);
+        router.push("/login"); // optional but recommended
       }
     };
 

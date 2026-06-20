@@ -4,9 +4,19 @@ import { useRouter } from "next/navigation";
 import API from "../../services/api";
 import { toast } from "react-toastify";
 
+interface ProfileData {
+  fname: string;
+  lname: string;
+  email: string;
+}
+
 export default function Profile() {
   const router = useRouter();
-  const [profileData, setProfileData] = useState<any>(null);
+  const [profileData, setProfileData] = useState<ProfileData>({
+    fname: "",
+    lname: "",
+    email: "",
+  });
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [formData, setFormData] = useState({
@@ -17,14 +27,9 @@ export default function Profile() {
 
   useEffect(() => {
     const fetchProfileData = async () => {
-      const token = localStorage.getItem("token");
-
       try {
-        const response = await API.get("/profile", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await API.get("/profile");
+
         setProfileData(response.data);
         setFormData({
           fname: response.data.fname,
@@ -34,10 +39,12 @@ export default function Profile() {
       } catch (error) {
         console.error("Error fetching profile data:", error);
         toast.error("Failed to load profile");
+        router.push("/login");
       } finally {
         setIsLoading(false);
       }
     };
+
     fetchProfileData();
   }, []);
 
@@ -50,19 +57,14 @@ export default function Profile() {
   };
 
   const handleSave = async () => {
-    const token = localStorage.getItem("token");
-
     try {
       setIsLoading(true);
-      await API.put("/profile", formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+
+      await API.put("/profile", formData);
 
       setProfileData(formData);
-      localStorage.setItem("user", JSON.stringify(formData));
       setIsEditing(false);
+
       toast.success("Profile updated successfully");
     } catch (error) {
       console.error("Error updating profile:", error);

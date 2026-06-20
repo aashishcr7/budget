@@ -50,8 +50,8 @@ export default function LoginForm() {
         },
       );
 
-      localStorage.setItem("token", res.data.access_token);
-      localStorage.setItem("user", JSON.stringify(res.data.user));
+      // localStorage.setItem("token", res.data.access_token);
+      // localStorage.setItem("user", JSON.stringify(res.data.user));
 
       toast.success("Login successful");
       router.push("/dashboard");

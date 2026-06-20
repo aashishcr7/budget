@@ -9,13 +9,13 @@ export function middleware(request: NextRequest) {
   console.log("PATH:", request.nextUrl.pathname);
   console.log("TOKEN:", token?.value);
 
-  const isProtected = protectedRoutes.some((route) =>
-    pathname.startsWith(route),
-  );
+  // const isProtected = protectedRoutes.some((route) =>
+  //   pathname.startsWith(route),
+  // );
 
-  if (isProtected && !token) {
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
+  // if (isProtected && !token) {
+  //   return NextResponse.redirect(new URL("/login", request.url));
+  // }
 
   return NextResponse.next();
 }

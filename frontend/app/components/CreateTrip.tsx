@@ -14,6 +14,7 @@ import API from "@/services/api";
 import { toast } from "react-toastify";
 import { useRouter, useSearchParams } from "next/navigation";
 import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
+import { useAuth } from "@/context/AuthContext"; // ← add this
 
 interface GeoapifyFeature {
   properties: {
@@ -29,6 +30,7 @@ interface GeoapifyFeature {
 export default function CreateTrip() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { loading: authLoading } = useAuth(); // ← add this
 
   const [query, setQuery] = useState("");
   const [suggestion, setSuggestion] = useState<GeoapifyFeature[]>([]);
@@ -42,7 +44,6 @@ export default function CreateTrip() {
   const [budget, setBudget] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // add this above your return
   const popularCities = [
     { name: "Paris", country: "France", emoji: "🗼" },
     { name: "Tokyo", country: "Japan", emoji: "🗾" },
@@ -87,7 +88,6 @@ export default function CreateTrip() {
 
   useEffect(() => {
     const destination = searchParams.get("destination");
-
     if (destination) {
       setQuery(destination);
       setHasSelected(true);
@@ -96,7 +96,6 @@ export default function CreateTrip() {
 
   useEffect(() => {
     if (hasSelected) return;
-
     if (!query || query.length < 3) {
       setSuggestion([]);
       return;
@@ -105,11 +104,8 @@ export default function CreateTrip() {
     const delay = setTimeout(async () => {
       try {
         const response = await axios.get<{ features: GeoapifyFeature[] }>(
-          `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(
-            query,
-          )}&apiKey=12723bd7cc58477798a0725a848d440b`,
+          `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(query)}&apiKey=12723bd7cc58477798a0725a848d440b`,
         );
-
         setSuggestion(response.data.features || []);
       } catch (error) {
         console.error("Error fetching cities:", error);
@@ -126,10 +122,6 @@ export default function CreateTrip() {
     setHasSelected(true);
   };
 
-  const handleContinue = () => {
-    setStep(3);
-  };
-
   const handleSubmit = async () => {
     setLoading(true);
     try {
@@ -138,24 +130,18 @@ export default function CreateTrip() {
           selectedPlace?.properties.city ||
           selectedPlace?.properties.address_line1 ||
           query,
-
         full_location: query,
-
         lat: selectedPlace?.properties.lat,
         lon: selectedPlace?.properties.lon,
-
         country: selectedPlace?.properties.country,
-
         days: Number(days),
         budget: Number(budget),
         trip_type: tripType,
       });
       toast.success("Trip created successfully ✅");
-
       router.push(`/trip/${response.data.trip_id}`);
     } catch (error) {
       console.error("ERROR:", error);
-
       if (axios.isAxiosError(error)) {
         toast.error(error.response?.data?.detail || "Something went wrong ❌");
       } else {
@@ -166,6 +152,10 @@ export default function CreateTrip() {
     }
   };
 
+  // ← prevents flash while auth is being checked
+  if (authLoading) return null;
+
+  // rest of the JSX is unchanged
   return (
     <div className="relative min-h-screen w-full flex items-center justify-center">
       <Image
@@ -176,13 +166,10 @@ export default function CreateTrip() {
         style={{ zIndex: -1 }}
         priority
       />
-      {/* Dark Overlay */}
       <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
 
-      {/* Step 1: Destination Selection */}
       {step === 1 && (
         <div className="flex flex-col md:flex-row justify-center md:justify-around w-full px-4 md:px-10 gap-6 md:gap-0 py-8 md:py-0">
-          {/* Left - Heading */}
           <div className="relative z-10 w-full md:max-w-md animate-fadeIn flex flex-col justify-center">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white mb-4 md:mb-6 leading-tight">
               Plan your next adventure
@@ -195,7 +182,6 @@ export default function CreateTrip() {
             </p>
           </div>
 
-          {/* Right - Search Card */}
           <div className="relative z-10 w-full md:max-w-3xl animate-fadeIn shadow-lg rounded bg-white p-4 sm:p-6">
             <p className="text-base sm:text-lg md:text-2xl text-gray-800 mb-4 md:mb-6 leading-relaxed font-semibold">
               Where are you headed?
@@ -203,8 +189,6 @@ export default function CreateTrip() {
             <p className="text-xs sm:text-sm text-gray-500 mb-2 leading-relaxed">
               Search for a city, region or point of interest.
             </p>
-
-            {/* Input + Dropdown wrapper */}
             <div className="relative">
               <input
                 type="text"
@@ -217,7 +201,6 @@ export default function CreateTrip() {
                 }}
                 className="w-full border border-gray-300 rounded-xl px-4 py-3 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-
               {suggestion.length > 0 && (
                 <div className="absolute w-full mt-2 bg-white rounded-xl shadow-xl border border-gray-200 max-h-72 overflow-y-auto z-50">
                   {suggestion.map((item, index) => (
@@ -232,8 +215,6 @@ export default function CreateTrip() {
                 </div>
               )}
             </div>
-
-            {/* Popular Cities */}
             {suggestion.length === 0 && (
               <div className="mt-4">
                 <p className="text-xs text-gray-400 mb-2 uppercase tracking-wide">
@@ -260,9 +241,7 @@ export default function CreateTrip() {
             <div className="flex justify-end mt-6 md:mt-8">
               <button
                 onClick={() => {
-                  if (selectedPlace || hasSelected) {
-                    setStep(2);
-                  }
+                  if (selectedPlace || hasSelected) setStep(2);
                 }}
                 disabled={!selectedPlace && !hasSelected}
                 className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-4 sm:px-6 py-2 rounded-lg font-semibold transition cursor-pointer text-sm sm:text-base"
@@ -274,10 +253,8 @@ export default function CreateTrip() {
         </div>
       )}
 
-      {/* Step 2: Date Selection */}
       {step === 2 && (
         <div className="flex flex-col md:flex-row justify-center md:justify-around w-full px-4 md:px-10 gap-6 md:gap-0 py-8 md:py-0">
-          {/* Left - Info */}
           <div className="relative z-10 w-full md:max-w-md animate-fadeIn flex flex-col justify-center">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white mb-4 md:mb-6 leading-tight">
               When are you going?
@@ -291,17 +268,13 @@ export default function CreateTrip() {
               </p>
             </div>
           </div>
-
-          {/* Right - Calendar Card */}
           <div className="relative z-10 w-full md:max-w-3xl animate-fadeIn shadow-lg rounded bg-white p-4 sm:p-6 md:p-8">
             <p className="text-base sm:text-lg md:text-2xl text-gray-800 mb-4 md:mb-6 leading-relaxed font-semibold">
               Number of days for your trip?
             </p>
-
             <div className="flex justify-center mb-4 sm:mb-6">
               <input
                 type="text"
-                id="days"
                 placeholder="Enter days"
                 className="border rounded p-2 w-full text-sm sm:text-base"
                 onChange={(e) => setDays(e.target.value)}
@@ -310,25 +283,20 @@ export default function CreateTrip() {
             <div className="flex justify-center mb-4 sm:mb-6">
               <input
                 type="text"
-                id="budget"
                 placeholder="Enter your budget"
                 className="border rounded p-2 w-full text-sm sm:text-base"
                 onChange={(e) => setBudget(e.target.value)}
               />
             </div>
-
-            {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-4">
               <button
-                onClick={() => {
-                  setStep(1);
-                }}
+                onClick={() => setStep(1)}
                 className="border-2 border-gray-300 text-gray-700 hover:border-gray-400 px-4 sm:px-6 py-2 rounded-lg font-semibold transition cursor-pointer text-sm sm:text-base order-2 sm:order-1"
               >
                 Back
               </button>
               <button
-                onClick={handleContinue}
+                onClick={() => setStep(3)}
                 disabled={!days || !budget}
                 className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-4 sm:px-6 py-2 rounded-lg font-semibold transition cursor-pointer text-sm sm:text-base order-1 sm:order-2"
               >
@@ -339,10 +307,8 @@ export default function CreateTrip() {
         </div>
       )}
 
-      {/* Step 3: Type of Trip */}
       {step === 3 && (
         <div className="flex flex-col md:flex-row justify-center md:justify-around w-full px-4 md:px-10 gap-6 md:gap-0 py-8 md:py-0">
-          {/* Left - Info */}
           <div className="relative z-10 w-full md:max-w-md animate-fadeIn flex flex-col justify-center">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white mb-4 md:mb-6 leading-tight">
               What kind of trip is this?
@@ -371,8 +337,6 @@ export default function CreateTrip() {
               </p>
             </div>
           </div>
-
-          {/* Right - Trip Type Cards */}
           <div className="relative z-10 w-full md:max-w-4xl animate-fadeIn shadow-lg rounded bg-white p-4 sm:p-6 md:p-8 md:max-h-[600px] overflow-y-auto">
             <p className="text-base sm:text-lg md:text-2xl text-gray-800 mb-4 md:mb-6 leading-relaxed font-semibold">
               Choose your trip style
@@ -382,11 +346,8 @@ export default function CreateTrip() {
                 <div
                   key={type.id}
                   onClick={() => setTripType(type.id)}
-                  className={`relative overflow-hidden rounded-2xl cursor-pointer transition transform hover:scale-105 ${
-                    tripType === type.id ? "ring-4 ring-blue-500" : ""
-                  }`}
+                  className={`relative overflow-hidden rounded-2xl cursor-pointer transition transform hover:scale-105 ${tripType === type.id ? "ring-4 ring-blue-500" : ""}`}
                 >
-                  {/* Image */}
                   <div className="relative h-32 sm:h-40 md:h-48 w-full">
                     <Image
                       src={type.image}
@@ -394,16 +355,11 @@ export default function CreateTrip() {
                       fill
                       className="object-cover"
                     />
-
-                    {/* Dark Overlay */}
                     <div className="absolute inset-0 bg-black/40" />
-
-                    {/* Text Content */}
                     <div className="absolute bottom-0 z-10 p-2 sm:p-3 md:p-4 text-white">
                       <p className="text-lg sm:text-xl md:text-2xl font-bold">
                         {type.name}
                       </p>
-
                       <p className="text-xs sm:text-sm text-gray-200 mt-1">
                         {type.description}
                       </p>
@@ -412,8 +368,6 @@ export default function CreateTrip() {
                 </div>
               ))}
             </div>
-
-            {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-4">
               <button
                 onClick={() => {

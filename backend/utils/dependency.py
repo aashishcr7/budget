@@ -1,5 +1,6 @@
 from fastapi import Depends, HTTPException, Cookie
 from utils.jwt import verify_token
+from db import users_collection  # ← import this
 
 def get_current_user(access_token: str = Cookie(default=None)):
     try:
@@ -12,15 +13,26 @@ def get_current_user(access_token: str = Cookie(default=None)):
             )
 
         payload = verify_token(access_token)
+        email = payload.get("sub")
 
-        print("COOKIE TOKEN:", access_token)
-        print("USER PAYLOAD:", payload)
+        if not email:
+            raise HTTPException(status_code=401, detail="Invalid token")
 
-        return payload
+        user = users_collection.find_one(
+            {"email": email},
+            {"_id": 0, "password": 0}  # exclude sensitive fields
+        )
 
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+
+        print("USER FROM DB:", user)
+        return user
+
+    except HTTPException:
+        raise
     except Exception as e:
         print("AUTH ERROR:", str(e))
-
         raise HTTPException(
             status_code=401,
             detail="Invalid token"

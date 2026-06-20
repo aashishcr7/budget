@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import API from "../../services/api";
 import { toast } from "react-toastify";
+import { useAuth } from "@/context/AuthContext";
 
 interface ProfileData {
   fname: string;
@@ -12,6 +13,7 @@ interface ProfileData {
 
 export default function Profile() {
   const router = useRouter();
+  const { loading: authLoading } = useAuth(); // ← auth guard
   const [profileData, setProfileData] = useState<ProfileData>({
     fname: "",
     lname: "",
@@ -26,10 +28,11 @@ export default function Profile() {
   });
 
   useEffect(() => {
+    if (authLoading) return; // ← wait for auth before fetching
+
     const fetchProfileData = async () => {
       try {
         const response = await API.get("/profile");
-
         setProfileData(response.data);
         setFormData({
           fname: response.data.fname,
@@ -46,44 +49,12 @@ export default function Profile() {
     };
 
     fetchProfileData();
-  }, []);
+  }, [authLoading]); // ← re-run when auth resolves
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  // ← prevents flash while auth is being checked
+  if (authLoading) return null;
 
-  const handleSave = async () => {
-    try {
-      setIsLoading(true);
-
-      await API.put("/profile", formData);
-
-      setProfileData(formData);
-      setIsEditing(false);
-
-      toast.success("Profile updated successfully");
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      toast.error("Failed to update profile");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCancel = () => {
-    setFormData({
-      fname: profileData.fname,
-      lname: profileData.lname,
-      email: profileData.email,
-    });
-    setIsEditing(false);
-  };
-
-  if (!profileData) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
@@ -98,29 +69,22 @@ export default function Profile() {
     `${profileData.fname[0]}${profileData.lname[0]}`.toUpperCase();
 
   return (
-    <div className=" py-12 px-4">
+    <div className="py-12 px-4">
       <div className="max-w-4xl mx-auto">
-        {/* Card Container */}
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-          {/* Header Background */}
           <div className="h-32 bg-gradient-to-r from-blue-500 to-indigo-600" />
 
-          {/* Profile Content */}
           <div className="px-6 md:px-12 pb-8">
-            {/* Avatar Section */}
             <div className="flex flex-col items-center -mt-16 mb-8">
               <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-5xl font-bold border-4 border-white shadow-lg">
                 {initials}
               </div>
             </div>
 
-            {/* Profile Info */}
             <div className="space-y-6">
               {isEditing ? (
-                // Edit Mode
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* First Name */}
                     <div className="flex flex-col gap-2">
                       <label className="font-semibold text-gray-700">
                         First Name
@@ -129,12 +93,15 @@ export default function Profile() {
                         type="text"
                         name="fname"
                         value={formData.fname}
-                        onChange={handleInputChange}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            fname: e.target.value,
+                          }))
+                        }
                         className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 hover:bg-white transition"
                       />
                     </div>
-
-                    {/* Last Name */}
                     <div className="flex flex-col gap-2">
                       <label className="font-semibold text-gray-700">
                         Last Name
@@ -143,13 +110,17 @@ export default function Profile() {
                         type="text"
                         name="lname"
                         value={formData.lname}
-                        onChange={handleInputChange}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            lname: e.target.value,
+                          }))
+                        }
                         className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 hover:bg-white transition"
                       />
                     </div>
                   </div>
 
-                  {/* Email */}
                   <div className="flex flex-col gap-2">
                     <label className="font-semibold text-gray-700">Email</label>
                     <input
@@ -164,7 +135,6 @@ export default function Profile() {
                     </p>
                   </div>
 
-                  {/* Action Buttons */}
                   <div className="flex gap-4 pt-4">
                     <button
                       onClick={handleSave}
@@ -183,7 +153,6 @@ export default function Profile() {
                   </div>
                 </>
               ) : (
-                // View Mode
                 <>
                   <div className="space-y-4">
                     <div className="flex justify-between items-center pb-4 border-b border-gray-200">
@@ -194,14 +163,12 @@ export default function Profile() {
                         </p>
                       </div>
                     </div>
-
                     <div className="pb-4 border-b border-gray-200">
                       <p className="text-sm text-gray-600">Email Address</p>
                       <p className="text-lg font-semibold text-gray-800">
                         {profileData.email}
                       </p>
                     </div>
-
                     <div className="pb-4">
                       <p className="text-sm text-gray-600">Member Since</p>
                       <p className="text-lg font-semibold text-gray-800">
@@ -213,8 +180,6 @@ export default function Profile() {
                       </p>
                     </div>
                   </div>
-
-                  {/* Edit Button */}
                   <button
                     onClick={() => setIsEditing(true)}
                     className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold py-3 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition duration-200 transform hover:scale-105 active:scale-95 cursor-pointer"
@@ -227,7 +192,6 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Back Button */}
         <button
           onClick={() => router.push("/dashboard")}
           className="mt-6 text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-2 cursor-pointer"
@@ -237,4 +201,25 @@ export default function Profile() {
       </div>
     </div>
   );
+
+  function handleSave() {
+    setIsLoading(true);
+    API.put("/profile", formData)
+      .then(() => {
+        setProfileData(formData);
+        setIsEditing(false);
+        toast.success("Profile updated successfully");
+      })
+      .catch(() => toast.error("Failed to update profile"))
+      .finally(() => setIsLoading(false));
+  }
+
+  function handleCancel() {
+    setFormData({
+      fname: profileData.fname,
+      lname: profileData.lname,
+      email: profileData.email,
+    });
+    setIsEditing(false);
+  }
 }

@@ -11,8 +11,7 @@ from fastapi.responses import JSONResponse
 router = APIRouter()
 
 IS_PRODUCTION = os.getenv("ENVIORNMENT") == "production"
-
-
+SAMESITE = "none" if IS_PRODUCTION else "lax"
 
 @router.post("/signup")
 def signup(user:UserSignup):
@@ -51,7 +50,7 @@ def login(user: UserLogin):
         value=token,
         httponly=True,
         secure=IS_PRODUCTION,
-        samesite="lax",
+        samesite=SAMESITE,
         max_age=3600,
         path="/",
 
@@ -70,7 +69,7 @@ def logout():
         path="/",
         httponly=True,
         secure=IS_PRODUCTION,
-        samesite="lax",
+        samesite=SAMESITE,
         max_age=0,
     )
     print("COOKIE DELETION SET - Headers:", dict(response.headers))

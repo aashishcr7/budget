@@ -54,7 +54,12 @@ export default function LoginForm() {
       // localStorage.setItem("user", JSON.stringify(res.data.user));
 
       toast.success("Login successful");
+
+      console.log("BEFORE REDIRECT");
+
       window.location.href = "/dashboard";
+
+      console.log("AFTER REDIRECT");
     } catch (error) {
       const axiosError = error as AxiosError<{ detail?: string }>;
       const errorMessage =

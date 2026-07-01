@@ -4,7 +4,18 @@ import axios, { AxiosError } from "axios";
 import { useState, FormEvent } from "react";
 import { toast } from "react-toastify";
 import Image from "next/image";
-import LocalAirportIcon from "@mui/icons-material/LocalAirport";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  User,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  Compass,
+  ArrowRight,
+  AlertCircle,
+  LogIn,
+} from "lucide-react";
 
 export default function SignupForm() {
   const router = useRouter();
@@ -13,6 +24,8 @@ export default function SignupForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPass, setShowPass] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{
     firstName?: string;
@@ -24,299 +37,357 @@ export default function SignupForm() {
 
   const validateForm = (): boolean => {
     const newErrors: typeof errors = {};
-
-    if (!firstName.trim()) {
-      newErrors.firstName = "First name is required";
-    }
-
-    if (!lastName.trim()) {
-      newErrors.lastName = "Last name is required";
-    }
-
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!firstName.trim()) newErrors.firstName = "First name is required";
+    if (!lastName.trim()) newErrors.lastName = "Last name is required";
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
       newErrors.email = "Please enter a valid email address";
-    }
-
-    if (!password || password.length < 6) {
+    if (!password || password.length < 6)
       newErrors.password = "Password must be at least 6 characters";
-    }
-
-    if (!confirmPassword || confirmPassword !== password) {
+    if (!confirmPassword || confirmPassword !== password)
       newErrors.confirmPassword = "Passwords do not match";
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setIsLoading(true);
     try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/signup`,
-        {
-          email,
-          password,
-          fname: firstName,
-          lname: lastName,
-        },
-      );
-
-      console.log(response.data);
-      toast.success("Account created successfully!");
+      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/signup`, {
+        email,
+        password,
+        fname: firstName,
+        lname: lastName,
+      });
+      toast.success("Account created! Welcome aboard ✈️");
       router.push("/login");
     } catch (error) {
       const axiosError = error as AxiosError<{ detail?: string }>;
       const errorMessage =
-        axiosError.response?.data?.detail ||
-        axiosError.message ||
-        "Signup failed";
+        axiosError.response?.data?.detail || axiosError.message || "Signup failed";
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Reusable field styles
+  const inputClass = (hasError?: string) =>
+    `w-full pl-4 pr-10 py-3 rounded-2xl text-sm font-medium bg-white/10 border backdrop-blur-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 transition-all ${
+      hasError
+        ? "border-red-400/60 focus:ring-red-400/30 bg-red-500/10"
+        : "border-white/20 hover:border-white/30 focus:ring-indigo-400/30 focus:border-indigo-400/60"
+    }`;
+
   return (
-    <div className="relative min-h-screen flex flex-col md:flex-row items-center md:items-start justify-center md:justify-between overflow-hidden p-4 md:p-12 gap-4 md:gap-12">
-      {/* Background Image */}
+    <div className="relative min-h-screen flex items-center justify-start overflow-hidden px-6 sm:px-12 lg:px-20">
+      {/* Background image */}
       <div className="absolute inset-0">
         <Image
           src="/images/loggin.png"
-          alt="Login form background"
+          alt="Signup background"
           fill
           className="object-cover object-[center_35%]"
           priority
         />
-        {/* Dark overlay for better text readability */}
-        <div className="absolute inset-0 bg-black/20"></div>
+        <div className="absolute inset-0 bg-slate-950/50" />
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/30 via-transparent to-purple-900/30" />
       </div>
 
-      {/* Form Section */}
-      <div className="relative z-10 bg-white rounded-4xl shadow-2xl w-full max-w-md p-8 md:p-12 flex flex-col bg-[#7d7de38f] mt-12 ml-12">
-        <div className="mb-6 text-center">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <LocalAirportIcon className="text-3xl md:text-4xl font-bold text-blue-800 mr-2 mb-2" />
-            <p className="text-xl md:text-2xl font-bold text-blue-800 mr-2 mb-2">
-              AI Trip Planner
+      {/* Floating decorative orbs */}
+      <div className="absolute top-20 left-10 w-72 h-72 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-20 right-10 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 24, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.45, ease: "easeOut" }}
+        className="relative z-10 w-full max-w-md my-8"
+      >
+        <div className="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl shadow-2xl shadow-slate-950/40 overflow-hidden">
+
+          {/* Top accent stripe */}
+          <div className="h-1 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-violet-500" />
+
+          <div className="px-8 pt-8 pb-10 space-y-6">
+            {/* Brand header */}
+            <div className="text-center space-y-1">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                  <Compass className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-white font-extrabold text-lg tracking-tight">AI Trip Planner</span>
+              </div>
+              <h1 className="text-3xl font-extrabold text-white tracking-tight">
+                Create account
+              </h1>
+              <p className="text-slate-300 text-sm">
+                Join and start planning your next adventure
+              </p>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+
+              {/* First name & Last name */}
+              <div className="grid grid-cols-2 gap-3">
+                {/* First name */}
+                <div className="space-y-1.5">
+                  <label htmlFor="fname" className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1">
+                    <User className="w-3 h-3 text-indigo-400" />
+                    First
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="fname"
+                      type="text"
+                      placeholder="John"
+                      value={firstName}
+                      onChange={(e) => {
+                        setFirstName(e.target.value);
+                        if (errors.firstName) setErrors({ ...errors, firstName: undefined });
+                      }}
+                      disabled={isLoading}
+                      className={inputClass(errors.firstName)}
+                    />
+                    {errors.firstName && (
+                      <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-red-400" />
+                    )}
+                  </div>
+                  <AnimatePresence>
+                    {errors.firstName && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        className="text-xs text-red-400 font-medium pl-1"
+                      >
+                        {errors.firstName}
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Last name */}
+                <div className="space-y-1.5">
+                  <label htmlFor="lname" className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1">
+                    <User className="w-3 h-3 text-indigo-400" />
+                    Last
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="lname"
+                      type="text"
+                      placeholder="Doe"
+                      value={lastName}
+                      onChange={(e) => {
+                        setLastName(e.target.value);
+                        if (errors.lastName) setErrors({ ...errors, lastName: undefined });
+                      }}
+                      disabled={isLoading}
+                      className={inputClass(errors.lastName)}
+                    />
+                    {errors.lastName && (
+                      <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-red-400" />
+                    )}
+                  </div>
+                  <AnimatePresence>
+                    {errors.lastName && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        className="text-xs text-red-400 font-medium pl-1"
+                      >
+                        {errors.lastName}
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+
+              {/* Email */}
+              <div className="space-y-1.5">
+                <label htmlFor="email" className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <Mail className="w-3.5 h-3.5 text-indigo-400" />
+                  Email Address
+                </label>
+                <div className="relative">
+                  <input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (errors.email) setErrors({ ...errors, email: undefined });
+                    }}
+                    disabled={isLoading}
+                    className={inputClass(errors.email)}
+                  />
+                  {errors.email && (
+                    <AlertCircle className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-red-400" />
+                  )}
+                </div>
+                <AnimatePresence>
+                  {errors.email && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      className="text-xs text-red-400 font-medium pl-1"
+                    >
+                      {errors.email}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Password */}
+              <div className="space-y-1.5">
+                <label htmlFor="password" className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <Lock className="w-3.5 h-3.5 text-indigo-400" />
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    id="password"
+                    type={showPass ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (errors.password) setErrors({ ...errors, password: undefined });
+                    }}
+                    disabled={isLoading}
+                    className={inputClass(errors.password)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPass(!showPass)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition cursor-pointer"
+                    tabIndex={-1}
+                  >
+                    {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <AnimatePresence>
+                  {errors.password && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      className="text-xs text-red-400 font-medium pl-1"
+                    >
+                      {errors.password}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Confirm Password */}
+              <div className="space-y-1.5">
+                <label htmlFor="confirmPassword" className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <Lock className="w-3.5 h-3.5 text-indigo-400" />
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <input
+                    id="confirmPassword"
+                    type={showConfirm ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      if (errors.confirmPassword) setErrors({ ...errors, confirmPassword: undefined });
+                    }}
+                    disabled={isLoading}
+                    className={inputClass(errors.confirmPassword)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm(!showConfirm)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition cursor-pointer"
+                    tabIndex={-1}
+                  >
+                    {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <AnimatePresence>
+                  {errors.confirmPassword && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      className="text-xs text-red-400 font-medium pl-1"
+                    >
+                      {errors.confirmPassword}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Create Account button */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3.5 rounded-2xl transition-all shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-[1.02] active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 cursor-pointer text-sm mt-1"
+              >
+                {isLoading ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Creating account...
+                  </>
+                ) : (
+                  <>
+                    Create Account
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+
+              {/* Divider */}
+              <div className="relative flex items-center gap-3">
+                <div className="flex-1 h-px bg-white/10" />
+                <span className="text-xs text-slate-400 font-medium">Already a member?</span>
+                <div className="flex-1 h-px bg-white/10" />
+              </div>
+
+              {/* Login button */}
+              <button
+                type="button"
+                onClick={() => router.push("/login")}
+                disabled={isLoading}
+                className="w-full flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 border border-white/20 hover:border-white/30 text-white font-semibold py-3.5 rounded-2xl transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed text-sm backdrop-blur-sm"
+              >
+                <LogIn className="w-4 h-4 text-indigo-300" />
+                Sign In Instead
+              </button>
+            </form>
+
+            {/* Footer note */}
+            <p className="text-center text-[11px] text-slate-500">
+              By creating an account, you agree to our{" "}
+              <span className="text-indigo-400 hover:text-indigo-300 cursor-pointer transition">Terms</span>
+              {" & "}
+              <span className="text-indigo-400 hover:text-indigo-300 cursor-pointer transition">Privacy Policy</span>
             </p>
           </div>
-          <p className="text-gray-600 text-sm">
-            Your AI companion for smarter travel
-          </p>
-        </div>
-        <div className="mb-4 px-4">
-          <span className="text-3xl md:text-3xl font-bold text-black-800 mr-2 mb-2">
-            Create
-          </span>
-          <span className="text-3xl md:text-3xl font-bold text-purple-800 mb-2">
-            Account
-          </span>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {" "}
-          {/* First Name & Last Name */}{" "}
-          <div className="grid grid-cols-2 gap-4">
-            {" "}
-            <div className="flex flex-col gap-2">
-              {" "}
-              <label htmlFor="fname" className="font-semibold text-gray-700">
-                {" "}
-                First Name{" "}
-              </label>{" "}
-              <input
-                id="fname"
-                type="text"
-                placeholder="John"
-                className={`w-full px-4 py-3 border rounded-lg transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.firstName ? "border-red-500 bg-red-50" : "border-gray-300 bg-gray-50 hover:bg-white"}`}
-                value={firstName}
-                onChange={(e) => {
-                  setFirstName(e.target.value);
-                  if (errors.firstName)
-                    setErrors({ ...errors, firstName: undefined });
-                }}
-                disabled={isLoading}
-                required
-              />{" "}
-              {errors.firstName && (
-                <span className="text-sm text-red-600 font-medium">
-                  {" "}
-                  {errors.firstName}{" "}
-                </span>
-              )}{" "}
-            </div>{" "}
-            <div className="flex flex-col gap-2">
-              {" "}
-              <label htmlFor="lname" className="font-semibold text-gray-700">
-                {" "}
-                Last Name{" "}
-              </label>{" "}
-              <input
-                id="lname"
-                type="text"
-                placeholder="Doe"
-                className={`w-full px-4 py-3 border rounded-lg transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.lastName ? "border-red-500 bg-red-50" : "border-gray-300 bg-gray-50 hover:bg-white"}`}
-                value={lastName}
-                onChange={(e) => {
-                  setLastName(e.target.value);
-                  if (errors.lastName)
-                    setErrors({ ...errors, lastName: undefined });
-                }}
-                disabled={isLoading}
-                required
-              />{" "}
-              {errors.lastName && (
-                <span className="text-sm text-red-600 font-medium">
-                  {" "}
-                  {errors.lastName}{" "}
-                </span>
-              )}{" "}
-            </div>{" "}
-          </div>{" "}
-          {/* Email */}{" "}
-          <div className="flex flex-col gap-2">
-            {" "}
-            <label htmlFor="email" className="font-semibold text-gray-700">
-              {" "}
-              Email Address{" "}
-            </label>{" "}
-            <input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              className={`w-full px-4 py-3 border rounded-lg transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.email ? "border-red-500 bg-red-50" : "border-gray-300 bg-gray-50 hover:bg-white"}`}
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                if (errors.email) setErrors({ ...errors, email: undefined });
-              }}
-              disabled={isLoading}
-              required
-            />{" "}
-            {errors.email && (
-              <span className="text-sm text-red-600 font-medium">
-                {" "}
-                {errors.email}{" "}
-              </span>
-            )}{" "}
-          </div>{" "}
-          {/* Password */}{" "}
-          <div className="flex flex-col gap-2">
-            {" "}
-            <label htmlFor="password" className="font-semibold text-gray-700">
-              {" "}
-              Password{" "}
-            </label>{" "}
-            <input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              className={`w-full px-4 py-3 border rounded-lg transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.password ? "border-red-500 bg-red-50" : "border-gray-300 bg-gray-50 hover:bg-white"}`}
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                if (errors.password)
-                  setErrors({ ...errors, password: undefined });
-              }}
-              disabled={isLoading}
-              required
-            />{" "}
-            {errors.password && (
-              <span className="text-sm text-red-600 font-medium">
-                {" "}
-                {errors.password}{" "}
-              </span>
-            )}{" "}
-          </div>{" "}
-          {/* Confirm Password */}{" "}
-          <div className="flex flex-col gap-2">
-            {" "}
-            <label
-              htmlFor="confirmPassword"
-              className="font-semibold text-gray-700"
-            >
-              {" "}
-              Confirm Password{" "}
-            </label>{" "}
-            <input
-              id="confirmPassword"
-              type="password"
-              placeholder="••••••••"
-              className={`w-full px-4 py-3 border rounded-lg transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.confirmPassword ? "border-red-500 bg-red-50" : "border-gray-300 bg-gray-50 hover:bg-white"}`}
-              value={confirmPassword}
-              onChange={(e) => {
-                setConfirmPassword(e.target.value);
-                if (errors.confirmPassword)
-                  setErrors({ ...errors, confirmPassword: undefined });
-              }}
-              disabled={isLoading}
-              required
-            />{" "}
-            {errors.confirmPassword && (
-              <span className="text-sm text-red-600 font-medium">
-                {" "}
-                {errors.confirmPassword}{" "}
-              </span>
-            )}{" "}
-          </div>{" "}
-          {/* Button */}{" "}
-          <button
-            type="submit"
-            className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold py-3 rounded-lg hover:from-blue-600 hover:to-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition duration-200 transform hover:scale-105 active:scale-95 mt-2 cursor-pointer"
-            disabled={isLoading}
-          >
-            {" "}
-            {isLoading ? (
-              <span className="flex items-center justify-center gap-2">
-                {" "}
-                <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />{" "}
-                Creating account...{" "}
-              </span>
-            ) : (
-              "Create Account"
-            )}{" "}
-          </button>{" "}
-          {/* Divider */}{" "}
-          <div className="relative">
-            {" "}
-            <div className="absolute inset-0 flex items-center">
-              {" "}
-              <div className="w-full border-t border-gray-300" />{" "}
-            </div>{" "}
-            <div className="relative flex justify-center text-sm">
-              {" "}
-              <span className="px-2 bg-white text-gray-500">
-                {" "}
-                Already have an account?{" "}
-              </span>{" "}
-            </div>{" "}
-          </div>{" "}
-          {/* Login */}{" "}
-          <button
-            type="button"
-            className="w-full border-2 border-gray-300 text-gray-700 font-semibold py-3 rounded-lg hover:border-blue-500 hover:bg-blue-50 disabled:opacity-60 disabled:cursor-not-allowed transition duration-200 cursor-pointer"
-            onClick={() => router.push("/login")}
-            disabled={isLoading}
-          >
-            {" "}
-            Login Instead{" "}
-          </button>{" "}
-        </form>
-      </div>
-
-      {/* Quote Section */}
-      <div className="relative z-10 hidden md:flex flex-col max-w-lg mt-12 mr-12">
-        <p className="text-white text-center text-lg">
-          Travel is the only <br /> thing you buy that <br /> makes you richer.
-        </p>
-      </div>
+        {/* Travel quote */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="text-center text-slate-400 text-sm mt-6 italic px-4"
+        >
+          "The world is a book and those who do not travel read only one page."
+        </motion.p>
+      </motion.div>
     </div>
   );
 }

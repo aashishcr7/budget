@@ -7,7 +7,10 @@ import { AuthProvider } from "@/context/AuthContext";
 
 export default function ClientLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const hideNavbar = pathname === "/login" || pathname === "/signup";
+  const hideNavbar =
+    pathname === "/login" ||
+    pathname === "/signup" ||
+    pathname === "/otp-verify";
 
   return (
     <AuthProvider>

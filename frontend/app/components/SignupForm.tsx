@@ -62,11 +62,13 @@ export default function SignupForm() {
         lname: lastName,
       });
       toast.success("Account created! Welcome aboard ✈️");
-      router.push("/login");
+      router.push("/otp-verify");
     } catch (error) {
       const axiosError = error as AxiosError<{ detail?: string }>;
       const errorMessage =
-        axiosError.response?.data?.detail || axiosError.message || "Signup failed";
+        axiosError.response?.data?.detail ||
+        axiosError.message ||
+        "Signup failed";
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
@@ -108,7 +110,6 @@ export default function SignupForm() {
         className="relative z-10 w-full max-w-md my-8"
       >
         <div className="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl shadow-2xl shadow-slate-950/40 overflow-hidden">
-
           {/* Top accent stripe */}
           <div className="h-1 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-violet-500" />
 
@@ -119,7 +120,9 @@ export default function SignupForm() {
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
                   <Compass className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-white font-extrabold text-lg tracking-tight">AI Trip Planner</span>
+                <span className="text-white font-extrabold text-lg tracking-tight">
+                  AI Trip Planner
+                </span>
               </div>
               <h1 className="text-3xl font-extrabold text-white tracking-tight">
                 Create account
@@ -131,12 +134,14 @@ export default function SignupForm() {
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-
               {/* First name & Last name */}
               <div className="grid grid-cols-2 gap-3">
                 {/* First name */}
                 <div className="space-y-1.5">
-                  <label htmlFor="fname" className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1">
+                  <label
+                    htmlFor="fname"
+                    className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1"
+                  >
                     <User className="w-3 h-3 text-indigo-400" />
                     First
                   </label>
@@ -148,7 +153,8 @@ export default function SignupForm() {
                       value={firstName}
                       onChange={(e) => {
                         setFirstName(e.target.value);
-                        if (errors.firstName) setErrors({ ...errors, firstName: undefined });
+                        if (errors.firstName)
+                          setErrors({ ...errors, firstName: undefined });
                       }}
                       disabled={isLoading}
                       className={inputClass(errors.firstName)}
@@ -173,7 +179,10 @@ export default function SignupForm() {
 
                 {/* Last name */}
                 <div className="space-y-1.5">
-                  <label htmlFor="lname" className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1">
+                  <label
+                    htmlFor="lname"
+                    className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1"
+                  >
                     <User className="w-3 h-3 text-indigo-400" />
                     Last
                   </label>
@@ -185,7 +194,8 @@ export default function SignupForm() {
                       value={lastName}
                       onChange={(e) => {
                         setLastName(e.target.value);
-                        if (errors.lastName) setErrors({ ...errors, lastName: undefined });
+                        if (errors.lastName)
+                          setErrors({ ...errors, lastName: undefined });
                       }}
                       disabled={isLoading}
                       className={inputClass(errors.lastName)}
@@ -211,7 +221,10 @@ export default function SignupForm() {
 
               {/* Email */}
               <div className="space-y-1.5">
-                <label htmlFor="email" className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                <label
+                  htmlFor="email"
+                  className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5"
+                >
                   <Mail className="w-3.5 h-3.5 text-indigo-400" />
                   Email Address
                 </label>
@@ -223,7 +236,8 @@ export default function SignupForm() {
                     value={email}
                     onChange={(e) => {
                       setEmail(e.target.value);
-                      if (errors.email) setErrors({ ...errors, email: undefined });
+                      if (errors.email)
+                        setErrors({ ...errors, email: undefined });
                     }}
                     disabled={isLoading}
                     className={inputClass(errors.email)}
@@ -248,7 +262,10 @@ export default function SignupForm() {
 
               {/* Password */}
               <div className="space-y-1.5">
-                <label htmlFor="password" className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                <label
+                  htmlFor="password"
+                  className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5"
+                >
                   <Lock className="w-3.5 h-3.5 text-indigo-400" />
                   Password
                 </label>
@@ -260,7 +277,8 @@ export default function SignupForm() {
                     value={password}
                     onChange={(e) => {
                       setPassword(e.target.value);
-                      if (errors.password) setErrors({ ...errors, password: undefined });
+                      if (errors.password)
+                        setErrors({ ...errors, password: undefined });
                     }}
                     disabled={isLoading}
                     className={inputClass(errors.password)}
@@ -271,7 +289,11 @@ export default function SignupForm() {
                     className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition cursor-pointer"
                     tabIndex={-1}
                   >
-                    {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showPass ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
                 <AnimatePresence>
@@ -290,7 +312,10 @@ export default function SignupForm() {
 
               {/* Confirm Password */}
               <div className="space-y-1.5">
-                <label htmlFor="confirmPassword" className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                <label
+                  htmlFor="confirmPassword"
+                  className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5"
+                >
                   <Lock className="w-3.5 h-3.5 text-indigo-400" />
                   Confirm Password
                 </label>
@@ -302,7 +327,8 @@ export default function SignupForm() {
                     value={confirmPassword}
                     onChange={(e) => {
                       setConfirmPassword(e.target.value);
-                      if (errors.confirmPassword) setErrors({ ...errors, confirmPassword: undefined });
+                      if (errors.confirmPassword)
+                        setErrors({ ...errors, confirmPassword: undefined });
                     }}
                     disabled={isLoading}
                     className={inputClass(errors.confirmPassword)}
@@ -313,7 +339,11 @@ export default function SignupForm() {
                     className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition cursor-pointer"
                     tabIndex={-1}
                   >
-                    {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showConfirm ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
                 <AnimatePresence>
@@ -352,7 +382,9 @@ export default function SignupForm() {
               {/* Divider */}
               <div className="relative flex items-center gap-3">
                 <div className="flex-1 h-px bg-white/10" />
-                <span className="text-xs text-slate-400 font-medium">Already a member?</span>
+                <span className="text-xs text-slate-400 font-medium">
+                  Already a member?
+                </span>
                 <div className="flex-1 h-px bg-white/10" />
               </div>
 
@@ -371,9 +403,13 @@ export default function SignupForm() {
             {/* Footer note */}
             <p className="text-center text-[11px] text-slate-500">
               By creating an account, you agree to our{" "}
-              <span className="text-indigo-400 hover:text-indigo-300 cursor-pointer transition">Terms</span>
+              <span className="text-indigo-400 hover:text-indigo-300 cursor-pointer transition">
+                Terms
+              </span>
               {" & "}
-              <span className="text-indigo-400 hover:text-indigo-300 cursor-pointer transition">Privacy Policy</span>
+              <span className="text-indigo-400 hover:text-indigo-300 cursor-pointer transition">
+                Privacy Policy
+              </span>
             </p>
           </div>
         </div>
@@ -385,7 +421,8 @@ export default function SignupForm() {
           transition={{ delay: 0.5 }}
           className="text-center text-slate-400 text-sm mt-6 italic px-4"
         >
-          "The world is a book and those who do not travel read only one page."
+          &quot;The world is a book and those who do not travel read only one
+          page.&quot;
         </motion.p>
       </motion.div>
     </div>

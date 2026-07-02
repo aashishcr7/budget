@@ -1,12 +1,17 @@
 import os
 
 from fastapi import APIRouter, HTTPException, Depends
-from db import users_collection
+from db import users_collection, otps_collection
 from utils.hash import hash_password, verify_password
 from utils.jwt import create_token
 from models.user import UserSignup, UserLogin
 from utils.dependency import get_current_user
 from fastapi.responses import JSONResponse
+from utils.otp import create_otp_for_user
+from utils.email import send_otp_email
+from models.otp import OtpVerify
+from datetime import datetime
+
 
 router = APIRouter()
 
@@ -24,9 +29,39 @@ def signup(user:UserSignup):
         "password": hashed_password,
         "fname": user.fname,
         "lname": user.lname,
+        "is_verified": False  # Add the is_verified field and set it to False
     })
 
-    return {"message": "User created successfully"}
+    otp = create_otp_for_user(user.email)
+    send_otp_email(user.email, otp)  # Send the OTP email
+
+    print(f"OTP for {user.email}: {otp}")
+
+    return {"message": "User created. OTP send to email"}
+
+
+@router.post("/verify-otp")
+def verify_otp(data: OtpVerify):
+    record = otps_collection.find_one({"email": data.email})
+
+    if not record:
+        raise HTTPException(status_code=400, detail="No OTP requested or it has expired. Please request a new one.")
+
+    if record.get("attempts", 0) >= 5:
+        raise HTTPException(status_code=429, detail="Too many incorrect attempts. Please request a new OTP.")
+
+    if datetime.utcnow() > record["expires_at"]:
+        otps_collection.delete_one({"email": data.email})
+        raise HTTPException(status_code=400, detail="OTP expired. Please request a new one.")
+
+    if record["otp"] != data.otp:
+        otps_collection.update_one({"email": data.email}, {"$inc": {"attempts": 1}})
+        raise HTTPException(status_code=400, detail="Invalid OTP")
+
+    users_collection.update_one({"email": data.email}, {"$set": {"is_verified": True}})
+    otps_collection.delete_one({"email": data.email})
+
+    return {"message": "Email verified successfully. You can now log in."}
 
 @router.post("/login")
 def login(user: UserLogin):
@@ -34,6 +69,9 @@ def login(user: UserLogin):
 
     if not db_user or not verify_password(user.password, db_user["password"]):
         raise HTTPException(status_code=400, detail="Invalid credentials")
+
+    if not db_user.get("is_verified", False):
+        raise HTTPException(status_code=403, detail="Email not verified")
 
     token = create_token({"sub": user.email})
 

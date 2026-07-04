@@ -61,7 +61,7 @@ export default function SignupForm() {
         fname: firstName,
         lname: lastName,
       });
-      toast.success("Account created! Welcome aboard ✈️");
+      toast.success("An OTP has been sent to your registerd email.");
       router.push("/otp-verify");
     } catch (error) {
       const axiosError = error as AxiosError<{ detail?: string }>;

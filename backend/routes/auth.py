@@ -3,13 +3,13 @@ import os
 from fastapi import APIRouter, HTTPException, Depends
 from db import users_collection, otps_collection
 from utils.hash import hash_password, verify_password
-from utils.jwt import create_token
+from utils.jwt import create_token, verify_token
 from models.user import UserSignup, UserLogin
 from utils.dependency import get_current_user
 from fastapi.responses import JSONResponse
 from utils.otp import create_otp_for_user
 from utils.email import send_otp_email
-from models.otp import OtpVerify
+from models.otp import ForgetPasswordRequest, OtpVerify, ResetPasswordRequest
 from datetime import datetime
 
 
@@ -62,6 +62,57 @@ def verify_otp(data: OtpVerify):
     otps_collection.delete_one({"email": data.email})
 
     return {"message": "Email verified successfully. You can now log in."}
+
+@router.post("/forget-password")
+def forget_password(data: ForgetPasswordRequest):
+    db_user = users_collection.find_one({"email": data.email})
+    if not db_user:
+        # Don't reveal whether the email exists - same message either way
+        return {"message": "If that email is registered, a code has been sent."}
+    
+    otp = create_otp_for_user(data.email)
+    send_otp_email(data.email,otp)
+    return {"message": "If that email is registered, a code has been sent"}
+
+@router.post("/verify-reset-otp")
+def verify_reset_otp(data: OtpVerify):
+    record = otps_collection.find_one({"email": data.email})
+
+    if not record:
+        raise HTTPException(status_code=400, detail="No OTP requested or it has expired.")
+    if record.get("attempts", 0) >= 5:
+        raise HTTPException(status_code=429, detail="Too many incorrect attempts.")
+    if datetime.utcnow() > record["expires_at"]:
+        otps_collection.delete_one({"email": data.email})
+        raise HTTPException(status_code=400, detail="OTP expired.")
+    if record["otp"] != data.otp:
+        otps_collection.update_one({"email": data.email}, {"$inc": {"attempts": 1}})
+        raise HTTPException(status_code=400, detail="Invalid OTP")
+
+    otps_collection.delete_one({"email": data.email})
+
+    # ↓↓↓ THIS is the line you're asking about ↓↓↓
+    reset_token = create_token(
+        {"sub": data.email, "purpose": "password_reset"},
+        expires_minutes=10
+    )
+    return {"reset_token": reset_token}
+
+@router.post("/reset-password")
+def reset_password(data: ResetPasswordRequest):
+    try:
+        payload = verify_token(data.reset_token)
+    except JWTError:
+        raise HTTPException(status_code=400, detail="Reset link is invalid or expired.")
+
+    if payload.get("purpose") != "password_reset":
+        raise HTTPException(status_code=400, detail="Invalid token for this action.")
+
+    email = payload.get("sub")
+    hashed = hash_password(data.new_password)
+    users_collection.update_one({"email": email}, {"$set": {"password": hashed}})
+
+    return {"message": "Password reset successfully. You can now log in."}
 
 @router.post("/login")
 def login(user: UserLogin):

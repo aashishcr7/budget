@@ -5,7 +5,16 @@ import axios, { AxiosError } from "axios";
 import { toast } from "react-toastify";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mail, Lock, Eye, EyeOff, Compass, ArrowRight, Sparkles, AlertCircle } from "lucide-react";
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  Compass,
+  ArrowRight,
+  Sparkles,
+  AlertCircle,
+} from "lucide-react";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -13,7 +22,9 @@ export default function LoginForm() {
   const [pass, setPass] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>(
+    {},
+  );
 
   const validateForm = (): boolean => {
     const newErrors: { email?: string; password?: string } = {};
@@ -36,14 +47,16 @@ export default function LoginForm() {
       await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/login`,
         { email, password: pass },
-        { withCredentials: true }
+        { withCredentials: true },
       );
       toast.success("Welcome back! ✈️");
       window.location.href = "/dashboard";
     } catch (error) {
       const axiosError = error as AxiosError<{ detail?: string }>;
       const errorMessage =
-        axiosError.response?.data?.detail || axiosError.message || "Login failed";
+        axiosError.response?.data?.detail ||
+        axiosError.message ||
+        "Login failed";
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
@@ -78,7 +91,6 @@ export default function LoginForm() {
         className="relative z-10 w-full max-w-md"
       >
         <div className="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl shadow-2xl shadow-slate-950/40 overflow-hidden">
-
           {/* Top accent stripe */}
           <div className="h-1 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-violet-500" />
 
@@ -89,7 +101,9 @@ export default function LoginForm() {
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
                   <Compass className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-white font-extrabold text-lg tracking-tight">AI Trip Planner</span>
+                <span className="text-white font-extrabold text-lg tracking-tight">
+                  AI Trip Planner
+                </span>
               </div>
               <h1 className="text-3xl font-extrabold text-white tracking-tight">
                 Welcome back
@@ -101,10 +115,12 @@ export default function LoginForm() {
 
             {/* Form */}
             <form onSubmit={handleLogin} className="space-y-5" noValidate>
-
               {/* Email field */}
               <div className="space-y-1.5">
-                <label htmlFor="email" className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                <label
+                  htmlFor="email"
+                  className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5"
+                >
                   <Mail className="w-3.5 h-3.5 text-indigo-400" />
                   Email Address
                 </label>
@@ -116,7 +132,8 @@ export default function LoginForm() {
                     value={email}
                     onChange={(e) => {
                       setEmail(e.target.value);
-                      if (errors.email) setErrors({ ...errors, email: undefined });
+                      if (errors.email)
+                        setErrors({ ...errors, email: undefined });
                     }}
                     disabled={isLoading}
                     className={`w-full pl-4 pr-10 py-3.5 rounded-2xl text-sm font-medium bg-white/10 border backdrop-blur-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 transition-all ${
@@ -145,7 +162,10 @@ export default function LoginForm() {
 
               {/* Password field */}
               <div className="space-y-1.5">
-                <label htmlFor="password" className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                <label
+                  htmlFor="password"
+                  className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5"
+                >
                   <Lock className="w-3.5 h-3.5 text-indigo-400" />
                   Password
                 </label>
@@ -157,7 +177,8 @@ export default function LoginForm() {
                     value={pass}
                     onChange={(e) => {
                       setPass(e.target.value);
-                      if (errors.password) setErrors({ ...errors, password: undefined });
+                      if (errors.password)
+                        setErrors({ ...errors, password: undefined });
                     }}
                     disabled={isLoading}
                     className={`w-full pl-4 pr-12 py-3.5 rounded-2xl text-sm font-medium bg-white/10 border backdrop-blur-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 transition-all ${
@@ -172,7 +193,11 @@ export default function LoginForm() {
                     className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition cursor-pointer"
                     tabIndex={-1}
                   >
-                    {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showPass ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
                 <AnimatePresence>
@@ -207,11 +232,19 @@ export default function LoginForm() {
                   </>
                 )}
               </button>
+              <p
+                onClick={() => router.push("/forget-password")}
+                className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5 cursor-pointer"
+              >
+                Forget Password
+              </p>
 
               {/* Divider */}
               <div className="relative flex items-center gap-3">
                 <div className="flex-1 h-px bg-white/10" />
-                <span className="text-xs text-slate-400 font-medium">New here?</span>
+                <span className="text-xs text-slate-400 font-medium">
+                  New here?
+                </span>
                 <div className="flex-1 h-px bg-white/10" />
               </div>
 
@@ -230,9 +263,13 @@ export default function LoginForm() {
             {/* Footer note */}
             <p className="text-center text-[11px] text-slate-500">
               By signing in, you agree to our{" "}
-              <span className="text-indigo-400 hover:text-indigo-300 cursor-pointer transition">Terms</span>
+              <span className="text-indigo-400 hover:text-indigo-300 cursor-pointer transition">
+                Terms
+              </span>
               {" & "}
-              <span className="text-indigo-400 hover:text-indigo-300 cursor-pointer transition">Privacy Policy</span>
+              <span className="text-indigo-400 hover:text-indigo-300 cursor-pointer transition">
+                Privacy Policy
+              </span>
             </p>
           </div>
         </div>
@@ -244,7 +281,7 @@ export default function LoginForm() {
           transition={{ delay: 0.5 }}
           className="text-center text-slate-400 text-sm mt-6 italic px-4"
         >
-          "Travel is the only thing you buy that makes you richer."
+          &quot;Travel is the only thing you buy that makes you richer.&quot;
         </motion.p>
       </motion.div>
     </div>

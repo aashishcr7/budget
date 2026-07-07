@@ -10,7 +10,9 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
   const hideNavbar =
     pathname === "/login" ||
     pathname === "/signup" ||
-    pathname === "/otp-verify";
+    pathname === "/otp-verify" ||
+    pathname === "/forget-password" ||
+    pathname === "/reset-password";
 
   return (
     <AuthProvider>

@@ -32,7 +32,7 @@ def signup(user:UserSignup):
         "is_verified": False  # Add the is_verified field and set it to False
     })
 
-    otp = create_otp_for_user(user.email)
+    otp = create_otp_for_user(user.email, "signup")
     send_otp_email(user.email, otp)  # Send the OTP email
 
     print(f"OTP for {user.email}: {otp}")
@@ -46,6 +46,9 @@ def verify_otp(data: OtpVerify):
 
     if not record:
         raise HTTPException(status_code=400, detail="No OTP requested or it has expired. Please request a new one.")
+    
+    if record.get("purpose") != "signup":
+        raise HTTPException(status_code=400, detail="Invalid OTP purpose. Please request a new OTP for signup.")
 
     if record.get("attempts", 0) >= 5:
         raise HTTPException(status_code=429, detail="Too many incorrect attempts. Please request a new OTP.")
@@ -70,7 +73,7 @@ def forget_password(data: ForgetPasswordRequest):
         # Don't reveal whether the email exists - same message either way
         return {"message": "If that email is registered, a code has been sent."}
     
-    otp = create_otp_for_user(data.email)
+    otp = create_otp_for_user(data.email, "reset")
     send_otp_email(data.email,otp)
     return {"message": "If that email is registered, a code has been sent"}
 
@@ -80,11 +83,17 @@ def verify_reset_otp(data: OtpVerify):
 
     if not record:
         raise HTTPException(status_code=400, detail="No OTP requested or it has expired.")
+    
+    if record.get("purpose") != "reset":       # in /verify-reset-otp
+        raise HTTPException(status_code=400, detail="Invalid OTP for this action.")
+
     if record.get("attempts", 0) >= 5:
         raise HTTPException(status_code=429, detail="Too many incorrect attempts.")
+    
     if datetime.utcnow() > record["expires_at"]:
         otps_collection.delete_one({"email": data.email})
         raise HTTPException(status_code=400, detail="OTP expired.")
+    
     if record["otp"] != data.otp:
         otps_collection.update_one({"email": data.email}, {"$inc": {"attempts": 1}})
         raise HTTPException(status_code=400, detail="Invalid OTP")

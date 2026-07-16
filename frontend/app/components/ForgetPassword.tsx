@@ -35,7 +35,9 @@ export default function ForgetPassword() {
         { withCredentials: true },
       );
       toast.success("Password reset link sent to your email!");
-      router.push("/otp-verify");
+      router.push(
+        `/otp-verify?email=${encodeURIComponent(email)}&purpose=reset`,
+      );
     } catch (error) {
       const axiosError = error as AxiosError<{ detail?: string }>;
       const errorMessage =

@@ -1,12 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useEffect } from "react";
 import axios, { AxiosError } from "axios";
 import { toast } from "react-toastify";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mail, Key, ArrowRight, AlertCircle, Compass } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 
 export default function OtpVerify() {
   const router = useRouter();
@@ -14,6 +15,13 @@ export default function OtpVerify() {
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; otp?: string }>({});
+  const searchParams = useSearchParams();
+  const purpose = searchParams.get("purpose"); // "signup" | "reset"
+
+  useEffect(() => {
+    const emailParam = searchParams.get("email");
+    if (emailParam) setEmail(emailParam);
+  }, [searchParams]);
 
   const validateForm = (): boolean => {
     const newErrors: { email?: string; otp?: string } = {};
@@ -33,17 +41,25 @@ export default function OtpVerify() {
 
     setIsLoading(true);
     try {
+      const endpoint =
+        purpose === "signup" ? "/verify-otp" : "/verify-reset-otp";
+
       const res = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/verify-reset-otp`, // ← changed endpoint
+        `${process.env.NEXT_PUBLIC_API_URL}${endpoint}`,
         { email, otp },
         { withCredentials: true },
       );
 
-      const resetToken = res.data.reset_token; // ← grab the token from the response
-      toast.success("OTP verified successfully!");
-      router.push(
-        `/reset-password?reset_token=${encodeURIComponent(resetToken)}`,
-      ); // ← pass it forward
+      if (purpose === "signup") {
+        toast.success("Email verified! You can now log in.");
+        router.push("/login");
+      } else {
+        const resetToken = res.data.reset_token;
+        toast.success("OTP verified successfully!");
+        router.push(
+          `/reset-password?reset_token=${encodeURIComponent(resetToken)}`,
+        );
+      }
     } catch (error) {
       const axiosError = error as AxiosError<{ detail?: string }>;
       const errorMessage =

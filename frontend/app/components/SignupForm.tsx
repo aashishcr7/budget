@@ -62,7 +62,9 @@ export default function SignupForm() {
         lname: lastName,
       });
       toast.success("An OTP has been sent to your registerd email.");
-      router.push("/otp-verify");
+      router.push(
+        `/otp-verify?email=${encodeURIComponent(email)}&purpose=signup`,
+      );
     } catch (error) {
       const axiosError = error as AxiosError<{ detail?: string }>;
       const errorMessage =

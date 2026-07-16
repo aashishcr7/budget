@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, FormEvent, useEffect } from "react";
+import { useState, FormEvent, useEffect, Suspense } from "react";
 import axios, { AxiosError } from "axios";
 import { toast } from "react-toastify";
 import Image from "next/image";
@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Mail, Key, ArrowRight, AlertCircle, Compass } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 
-export default function OtpVerify() {
+function OtpVerifyForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
@@ -229,5 +229,13 @@ export default function OtpVerify() {
         </div>
       </motion.div>
     </div>
+  );
+}
+
+export default function OtpVerify() {
+  return (
+    <Suspense fallback={null}>
+      <OtpVerifyForm />
+    </Suspense>
   );
 }

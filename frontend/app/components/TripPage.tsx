@@ -49,6 +49,7 @@ export default function TripPage() {
   const [image, setImage] = useState<string | null>(null);
   const hasFetched = useRef(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -65,8 +66,8 @@ export default function TripPage() {
       return null;
     }
   };
+
   const handleShare = async () => {
-    // Already have a link this session — just copy it again
     if (shareUrl) {
       navigator.clipboard.writeText(shareUrl);
       setCopied(true);
@@ -79,6 +80,7 @@ export default function TripPage() {
       const res = await API.post(`/trip/${id}/share`);
       const url = `${window.location.origin}/trip/share/${res.data.shareToken}`;
       setShareUrl(url);
+      setExpiresAt(res.data.expiresAt);
       navigator.clipboard.writeText(url);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -142,6 +144,15 @@ export default function TripPage() {
   const totalDays = trip?.itinerary?.trip?.length || trip.days;
   const dailyAvg = totalDays > 0 ? Math.round(trip.budget / totalDays) : 0;
 
+  const formatExpiry = (isoString: string) => {
+    const date = new Date(isoString);
+    return date.toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-zinc-100 to-indigo-50/20">
       {/* Hero Banner */}
@@ -172,7 +183,7 @@ export default function TripPage() {
           </button>
         </div>
         {/* Share button */}
-        <div className="absolute top-5 right-5 sm:top-7 sm:right-8 z-10">
+        <div className="absolute top-5 right-5 sm:top-7 sm:right-8 z-10 flex flex-col items-end gap-1.5">
           <button
             onClick={handleShare}
             disabled={sharing}
@@ -181,7 +192,7 @@ export default function TripPage() {
             {copied ? (
               <>
                 <Check className="w-4 h-4 text-emerald-300" />
-                <span>Copied!Expires in 7 days</span>
+                <span>Copied!</span>
               </>
             ) : (
               <>
@@ -190,6 +201,12 @@ export default function TripPage() {
               </>
             )}
           </button>
+
+          {expiresAt && (
+            <span className="text-[11px] text-white/70 bg-black/20 backdrop-blur-sm px-2.5 py-1 rounded-full">
+              Expires {formatExpiry(expiresAt)}
+            </span>
+          )}
         </div>
 
         {/* Hero content */}

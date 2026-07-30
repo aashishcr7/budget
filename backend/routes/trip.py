@@ -8,6 +8,7 @@ from services.llm_service import (
 )
 from bson import ObjectId
 from utils.cache import r
+import uuid
 
 router = APIRouter()
 
@@ -133,6 +134,44 @@ def favourites_trip(trip_id:str, user=Depends(get_current_user)):
     )
 
     return {"is_favourite": new_value}
+
+@router.post("/trip/{trip_id}/share")
+def create_share_link(trip_id: str, user=Depends(get_current_user)):
+    trip = trips_collection.find_one({"_id": ObjectId(trip_id)})
+
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    if trip["user_email"] != user["email"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    # Idempotent: reuse existing token if already shared
+    if trip.get("shareToken"):
+        return {"shareToken": trip["shareToken"]}
+
+    share_token = str(uuid.uuid4())
+
+    trips_collection.update_one(
+        {"_id": ObjectId(trip_id)},
+        {"$set": {"shareToken": share_token}}
+    )
+
+    return {"shareToken": share_token}
+
+@router.get("/trip/shared/{share_token}")
+def get_shared_trip(share_token: str):
+    trip = trips_collection.find_one({"shareToken": share_token})
+
+    if not trip:
+        raise HTTPException(status_code=404, detail="Shared trip not found")
+
+    return {
+        "destination": trip.get("destination", {}),
+        "days": trip["days"],
+        "budget": trip["budget"],
+        "trip_type": trip.get("trip_type"),
+        "itinerary": trip["itinerary"],
+    }
 
 @router.get("/recommendations")
 def get_recommendations(user=Depends(get_current_user)):

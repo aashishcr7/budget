@@ -12,7 +12,8 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
     pathname === "/signup" ||
     pathname === "/otp-verify" ||
     pathname === "/forget-password" ||
-    pathname === "/reset-password";
+    pathname === "/reset-password" ||
+    pathname.startsWith("/trip/share/");
 
   return (
     <AuthProvider>

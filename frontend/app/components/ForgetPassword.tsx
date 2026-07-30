@@ -34,7 +34,7 @@ export default function ForgetPassword() {
         { email },
         { withCredentials: true },
       );
-      toast.success("Password reset link sent to your email!");
+      toast.success("OTP has been sent to your email!");
       router.push(
         `/otp-verify?email=${encodeURIComponent(email)}&purpose=reset`,
       );
@@ -43,7 +43,7 @@ export default function ForgetPassword() {
       const errorMessage =
         axiosError.response?.data?.detail ||
         axiosError.message ||
-        "Failed to send reset link.";
+        "Failed to send verification code.";
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
@@ -129,9 +129,9 @@ export default function ForgetPassword() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full mt-6 px-4 py-3 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50"
+                className="w-full mt-6 px-4 py-3 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 cursor-pointer"
               >
-                {isLoading ? "Sending..." : "Send Reset Link"}
+                {isLoading ? "Sending..." : "Send OTP"}
                 <ArrowRight className="w-4 h-4" />
               </button>
             </form>
@@ -142,7 +142,7 @@ export default function ForgetPassword() {
                 <button
                   type="button"
                   onClick={() => router.push("/login")}
-                  className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors"
+                  className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors cursor-pointer"
                 >
                   Back to Login
                 </button>

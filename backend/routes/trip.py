@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from models.trip import TripCreate
 from db import trips_collection
 from utils.dependency import get_current_user
-from datetime import datetime
+from datetime import datetime, timedelta
 from services.llm_service import (
     generate_itinerary,
 )
@@ -145,15 +145,26 @@ def create_share_link(trip_id: str, user=Depends(get_current_user)):
     if trip["user_email"] != user["email"]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    # Idempotent: reuse existing token if already shared
-    if trip.get("shareToken"):
-        return {"shareToken": trip["shareToken"]}
+    existing_token = trip.get("shareToken")
+    expires_at = trip.get("shareTokenExpiresAt")
+
+    #Resuse token only when it is not expired
+    if existing_token and expires_at and expires_at > datetime.utcnow():
+        return {
+            "shareToken": existing_token,
+            "expiresAt": expires_at.isoformat()
+        }
 
     share_token = str(uuid.uuid4())
+    new_expiry = datetime.utcnow() + timedelta(days=7)
+
 
     trips_collection.update_one(
         {"_id": ObjectId(trip_id)},
-        {"$set": {"shareToken": share_token}}
+        {"$set": {
+            "shareToken": share_token,
+            "shareTokenExpiresAt": new_expiry
+        }}
     )
 
     return {"shareToken": share_token}
@@ -164,6 +175,10 @@ def get_shared_trip(share_token: str):
 
     if not trip:
         raise HTTPException(status_code=404, detail="Shared trip not found")
+
+    expires_at = trip.get("shareTokenExpiresAt")
+    if not expires_at and expires_at < datetime.utcnow():
+        raise HTTPException(status_code=410, detail="Shared trip link has expired")
 
     return {
         "destination": trip.get("destination", {}),

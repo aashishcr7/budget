@@ -181,7 +181,7 @@ export default function TripPage() {
             {copied ? (
               <>
                 <Check className="w-4 h-4 text-emerald-300" />
-                <span>Copied!</span>
+                <span>Copied!Expires in 7 days</span>
               </>
             ) : (
               <>
